@@ -17,6 +17,7 @@ builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"
 // JWT
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JWT"));
 
+// Infrastructure
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // Authentication with JWT

@@ -15,7 +15,7 @@ namespace Infrastructure.Persistence
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
             // Seed roles
-            var roles = new[] { "Admin", "Manager", "User" };
+            var roles = new[] { UserRoles.Admin, UserRoles.Manager, UserRoles.Cashier, UserRoles.User };
             foreach (var role in roles)
             {
                 if(!await roleManager.RoleExistsAsync(role))
@@ -40,7 +40,7 @@ namespace Infrastructure.Persistence
                 var result = await userManager.CreateAsync(adminUser, "Admin@123");
                 if (result.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(adminUser, "Admin");
+                    await userManager.AddToRoleAsync(adminUser, UserRoles.Admin);
                 }
             }
         }

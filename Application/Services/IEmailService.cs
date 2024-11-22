@@ -5,6 +5,6 @@ namespace Application.Services
 {
     public interface IEmailService
     {
-        Task SendEmailAsync (User user, string token);
+        Task SendConfirmationEmailAsync(User user, string token);
     }
 }

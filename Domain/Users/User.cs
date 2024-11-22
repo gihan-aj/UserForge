@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System;
+using System.Data;
 
 namespace Domain.Users
 {
@@ -6,5 +8,12 @@ namespace Domain.Users
     {
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiery { get; set; }
+
     }
+
+    /**
+     * HAVE TO ADD VALIDATION OF SOME SORT
+     */
 }

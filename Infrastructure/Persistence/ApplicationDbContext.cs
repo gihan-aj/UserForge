@@ -9,5 +9,6 @@ namespace Infrastructure.Persistence
         public ApplicationDbContext(DbContextOptions options) : base(options)
         {
         }
+
     }
 }

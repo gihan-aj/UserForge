@@ -22,7 +22,7 @@ namespace Infrastructure.Services
             _jwtSettings = jwtSettings.Value;
         }
 
-        public async Task SendEmailAsync(User user, string token)
+        public async Task SendConfirmationEmailAsync(User user, string token)
         {
             token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
