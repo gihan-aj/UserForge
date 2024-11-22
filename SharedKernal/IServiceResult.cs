@@ -2,7 +2,7 @@
 {
     public interface IServiceResult
     {
-        public static readonly Error ServiceError = new("ServiceError", "A service problem occured");
+        public static readonly Error ServiceError = new("ValidationError", "One or more validation errors occured.");
         Error[] Errors { get; }
     }
 }

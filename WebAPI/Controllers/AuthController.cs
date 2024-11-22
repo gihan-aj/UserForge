@@ -1,5 +1,6 @@
 ﻿using Application.Services;
 using Domain.Users;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -39,6 +40,13 @@ namespace WebAPI.Controllers
         [AllowAnonymous]
         public async Task<IResult> Register([FromBody] RegisterRequest request)
         {
+            var validator = new RegisterRequestValidator();
+            var validationResult = validator.Validate(request);
+            if(!validationResult.IsValid)
+            {
+                return HandleFailure(ResultExtensions.CreateProblemDetailsFromValidationErrors<RegisterRequest>(validationResult));
+            }
+
             var result = await _authService.CreateUserAsync(
                 request.FirstName.ToLower(), 
                 request.LastName.ToLower(), 
@@ -92,6 +100,13 @@ namespace WebAPI.Controllers
         [AllowAnonymous]
         public async Task<IResult> Login([FromBody] LoginRequest request)
         {
+            var validator = new LoginRequestValidator();
+            var validationResult = validator.Validate(request);
+            if (!validationResult.IsValid)
+            {
+                return HandleFailure(ResultExtensions.CreateProblemDetailsFromValidationErrors<LoginRequest>(validationResult));
+            }
+
             var userResult = await _authService.LoginAsync(request.Email.ToLower(), request.Password);
             if (userResult.IsFailure)
             {
@@ -273,9 +288,9 @@ namespace WebAPI.Controllers
                     result.Error,
                     result.Errors)),
                 
-                { Error: { Code: "ServiceError" } } =>
+                { Error: { Code: "ValidationError" } } =>
                 Results.BadRequest(ResultExtensions.CreateProblemDetails(
-                    "User Validation Error",
+                    "Validation Error",
                     StatusCodes.Status400BadRequest,
                     result.Error,
                     result.Errors)),

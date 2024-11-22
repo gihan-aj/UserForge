@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
-namespace WebAPI.DependencyInjection
+namespace WebAPI.ServiceRegistrar
 {
     public static class Authentication
     {
