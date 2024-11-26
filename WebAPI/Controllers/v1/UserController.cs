@@ -1,12 +1,16 @@
-﻿using Application.Services;
+﻿using Application.Configurations;
+using Application.Services;
 using Asp.Versioning;
 using Domain.Users;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using SharedKernal;
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using WebAPI.Extensions;
 using WebAPI.Infrastructure;
@@ -19,17 +23,17 @@ namespace WebAPI.Controllers.v1
     [ApiVersion("1")]
     public class UserController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
         private readonly IUserService _userService;
         private readonly ITokenService _tokenService;
+        private readonly JwtSettings _jwtSettings;
 
-        public UserController(IConfiguration configuration, IEmailService emailService, IUserService userService, ITokenService tokenService)
+        public UserController(IEmailService emailService, IUserService userService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings)
         {
-            _configuration = configuration;
             _emailService = emailService;
             _userService = userService;
             _tokenService = tokenService;
+            _jwtSettings = jwtSettings.Value;
         }
 
         [HttpPost("register")]
@@ -89,8 +93,27 @@ namespace WebAPI.Controllers.v1
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = UserRoles.User)]
         public async Task<IResult> GetById(string id)
         {
+            var result = await _userService.FindByIdAsync(id);
+            if (result.IsFailure)
+            {
+                return HandleFailure(result);
+            }
+
+            var user = result.Value;
+
+            var userResponse = new GetUserResponse(id, user.UserName, user.FirstName, user.LastName);
+
+            return Results.Ok(userResponse);
+        }
+        
+        [HttpGet("logged-in-user-details")]
+        [Authorize(Roles = UserRoles.User)]
+        public async Task<IResult> GetUser()
+        {
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var result = await _userService.FindByIdAsync(id);
             if (result.IsFailure)
             {
@@ -190,7 +213,7 @@ namespace WebAPI.Controllers.v1
                 HttpOnly = true,
                 Secure = true, // For production , HTTPS
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(7)
+                Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays)
             });
 
             return Results.Ok(new LoginResponse(user.UserName, user.FirstName, user.LastName, accessToken));
@@ -225,12 +248,12 @@ namespace WebAPI.Controllers.v1
             }
 
             // Store refresh token in httpOnly cookie
-            HttpContext.Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+            HttpContext.Response.Cookies.Append("refreshToken", newRefreshToken, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true, // For production , HTTPS
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(7)
+                Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays)
             });
 
             // User roles
@@ -240,6 +263,37 @@ namespace WebAPI.Controllers.v1
             string accessToken = _tokenService.CreateJwtToken(user, rolesResult.Value);
 
             return Results.Ok(new LoginResponse(user.UserName, user.FirstName, user.LastName, accessToken));
+        }
+
+        [HttpPut("change-password")]
+        [Authorize]
+        public async Task<IResult> ChangePassword(ChangePasswordRequest request)
+        {
+            if (request is null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            var validator = new ChangePasswordRequestValidator();
+            var validationResult = ValidationHandler.Handle(validator.Validate(request));
+            if (validationResult.IsFailure)
+            {
+                return HandleFailure(validationResult);
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if(userId is null)
+            {
+                return HandleFailure(Result.Failure(UserErrors.Token.InvalidAccessToken));
+            }
+
+            var result = await _userService.ChangePasswordAsync(userId,request.CurrentPassowrd, request.NewPassword, request.ConfirmNewPassword);
+            if(result.IsFailure)
+            {
+                return HandleFailure(result);
+            }
+
+            return Results.NoContent();
         }
 
         //[HttpPost]
@@ -334,6 +388,12 @@ namespace WebAPI.Controllers.v1
                 { Error: { Code: "PasswordMismatch" } } =>
                 Results.BadRequest(ResultExtensions.CreateProblemDetails(
                     "Password Mismatch",
+                    StatusCodes.Status400BadRequest,
+                    result.Error)),
+                
+                { Error: { Code: "InvalidAccessToken" } } =>
+                Results.Problem(ResultExtensions.CreateProblemDetails(
+                    "Invalid Access Token",
                     StatusCodes.Status400BadRequest,
                     result.Error)),
 

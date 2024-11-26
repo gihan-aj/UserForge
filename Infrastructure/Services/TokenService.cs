@@ -1,7 +1,6 @@
 ﻿using Application.Configurations;
 using Application.Services;
 using Domain.Users;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -43,9 +42,10 @@ namespace Infrastructure.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(userClaims),
-                Expires = DateTime.UtcNow.AddDays(_jwtSettings.ExpiresInMinutes),
+                Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiresInMinutes),
                 SigningCredentials = credentials,
                 Issuer = _jwtSettings.Issuer,
+                Audience = _jwtSettings.ClientUrl
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();

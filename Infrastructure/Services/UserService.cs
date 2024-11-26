@@ -1,8 +1,10 @@
-﻿using Application.Services;
+﻿using Application.Configurations;
+using Application.Services;
 using Domain.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SharedKernal;
 using System;
 using System.Collections.Generic;
@@ -16,11 +18,13 @@ namespace Infrastructure.Services
     {
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly JwtSettings _jwtSettings;
 
-        public UserService(RoleManager<IdentityRole> roleManager, UserManager<User> userManager)
+        public UserService(RoleManager<IdentityRole> roleManager, UserManager<User> userManager, IOptions<JwtSettings> jwtSettings)
         {
             _roleManager = roleManager;
             _userManager = userManager;
+            _jwtSettings = jwtSettings.Value;
         }
 
         public async Task<Result<User>> CreateAsync(string firstName, string lastName, string email, string password)
@@ -142,7 +146,7 @@ namespace Infrastructure.Services
         public async Task<Result> PersistRefreshToken(User user, string refreshToken)
         {
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiery = DateTime.UtcNow.AddDays(7);
+            user.RefreshTokenExpiery = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays);
 
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
