@@ -1,7 +1,6 @@
 ﻿using Application.Services;
-using Azure.Core;
+using Asp.Versioning;
 using Domain.Users;
-using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,12 +11,12 @@ using System.Threading.Tasks;
 using WebAPI.Extensions;
 using WebAPI.Infrastructure;
 using WebAPI.Models.Users;
-using static Domain.Users.UserErrors;
 
-namespace WebAPI.Controllers
+namespace WebAPI.Controllers.v1
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v{apiVersion:apiVersion}/[controller]")]
+    [ApiVersion("1")]
     public class UserController : ControllerBase
     {
         private readonly IConfiguration _configuration;
@@ -50,9 +49,9 @@ namespace WebAPI.Controllers
             }
 
             var result = await _userService.CreateAsync(
-                request.FirstName.ToLower(), 
-                request.LastName.ToLower(), 
-                request.Email.ToLower(), 
+                request.FirstName.ToLower(),
+                request.LastName.ToLower(),
+                request.Email.ToLower(),
                 request.Password);
 
             if (result.IsFailure)
@@ -110,7 +109,7 @@ namespace WebAPI.Controllers
         public async Task<IResult> ConfirmEmail(string userId, string token)
         {
             var result = await _userService.ConfirmEmailAsync(userId, token);
-            if(result.IsFailure)
+            if (result.IsFailure)
             {
                 return HandleFailure(result);
             }
@@ -147,7 +146,7 @@ namespace WebAPI.Controllers
 
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<IResult> Login([FromBody]LoginRequest request)
+        public async Task<IResult> Login([FromBody] LoginRequest request)
         {
             if (request is null)
             {
@@ -162,7 +161,7 @@ namespace WebAPI.Controllers
             }
 
             var loginResult = await _userService.LoginAsync(request.Email.ToLower(), request.Password);
-            if(loginResult.IsFailure)
+            if (loginResult.IsFailure)
             {
                 return HandleFailure(loginResult);
             }
@@ -180,7 +179,7 @@ namespace WebAPI.Controllers
 
             // Save refresh token
             var persistRefreshTokenResult = await _userService.PersistRefreshToken(user, refreshToken);
-            if(persistRefreshTokenResult.IsFailure)
+            if (persistRefreshTokenResult.IsFailure)
             {
                 return HandleFailure(persistRefreshTokenResult);
             }
@@ -282,118 +281,67 @@ namespace WebAPI.Controllers
             {
                 { IsSuccess: true } => throw new InvalidOperationException(),
 
-                { Error : { Code: "ValidationError"} } => 
+                { Error: { Code: "ValidationError" } } =>
                 Results.BadRequest(ResultExtensions.CreateProblemDetails(
                     "Validation Errors",
                     StatusCodes.Status400BadRequest,
                     result.Error,
                     result.Error.SubErrors.ToArray())),
-                
-                { Error : { Code: "IdentityError"} } => 
+
+                { Error: { Code: "IdentityError" } } =>
                 Results.BadRequest(ResultExtensions.CreateProblemDetails(
                     "Identity Errors",
                     StatusCodes.Status400BadRequest,
                     result.Error,
                     result.Error.SubErrors.ToArray())),
-                
-                { Error : { Code: "EmailAlreadyExists" } } => 
+
+                { Error: { Code: "EmailAlreadyExists" } } =>
                 Results.Problem(ResultExtensions.CreateProblemDetails(
                     "Email Already Exists",
                     StatusCodes.Status409Conflict,
                     result.Error)),
-                
-                { Error : { Code: "UserNotFound" } } => 
+
+                { Error: { Code: "UserNotFound" } } =>
                 Results.NotFound(ResultExtensions.CreateProblemDetails(
                     "User Not Found",
                     StatusCodes.Status404NotFound,
                     result.Error)),
-                
-                { Error : { Code: "EmailAlreadyConfirmed" } } => 
+
+                { Error: { Code: "EmailAlreadyConfirmed" } } =>
                 Results.Problem(ResultExtensions.CreateProblemDetails(
                     "Email Already Confirmed",
                     StatusCodes.Status409Conflict,
                     result.Error)),
-                
-                { Error : { Code: "InvalidCredentials" } } => 
+
+                { Error: { Code: "InvalidCredentials" } } =>
                 Results.BadRequest(ResultExtensions.CreateProblemDetails(
                     "Invalid Credentials",
                     StatusCodes.Status400BadRequest,
                     result.Error)),
-                
-                { Error : { Code: "MissingRefreshToken" } } => 
-                Results.Problem(ResultExtensions.CreateProblemDetails(
-                    "User Validation Error",
-                    StatusCodes.Status400BadRequest,
-                    result.Error)),
-                
-                { Error : { Code: "InvalidRefreshToken" } } => 
+
+                { Error: { Code: "MissingRefreshToken" } } =>
                 Results.Problem(ResultExtensions.CreateProblemDetails(
                     "User Validation Error",
                     StatusCodes.Status400BadRequest,
                     result.Error)),
 
-                //{ Error: { Code: "User.NotValid" } } => 
-                //Results.Problem(ResultExtensions.CreateProblemDetails(
-                //    "Invalid",
-                //    StatusCodes.Status401Unauthorized,
-                //    result.Error)),
-                
-                //{ Error: { Code: "User.NotFound" } } => 
-                //Results.NotFound(ResultExtensions.CreateProblemDetails(
-                //    "Not Found",
-                //    StatusCodes.Status404NotFound,
-                //    result.Error)),
+                { Error: { Code: "InvalidRefreshToken" } } =>
+                Results.Problem(ResultExtensions.CreateProblemDetails(
+                    "User Validation Error",
+                    StatusCodes.Status400BadRequest,
+                    result.Error)),
 
-                //{ Error: { Code: "User.EmailNotFound" } } =>
-                //Results.NotFound(ResultExtensions.CreateProblemDetails(
-                //    "Email Not Found",
-                //    StatusCodes.Status404NotFound,
-                //    result.Error)),
-                
-                //{ Error: { Code: "User.EmailNotConfirmed" } } =>
-                //Results.BadRequest(ResultExtensions.CreateProblemDetails(
-                //    "Email Not Confirmed",
-                //    StatusCodes.Status400BadRequest,
-                //    result.Error)),
-                
-                //{ Error: { Code: "User.AlreadyExists" } } =>
-                //Results.Problem(ResultExtensions.CreateProblemDetails(
-                //    "User Already Exists",
-                //    StatusCodes.Status406NotAcceptable,
-                //    result.Error)),
-                
-                //{ Error: { Code: "User.EmailAlreadyConfirmed" } } =>
-                //Results.BadRequest(ResultExtensions.CreateProblemDetails(
-                //    "Email Already Confirmed",
-                //    StatusCodes.Status400BadRequest,
-                //    result.Error)),
-
-                //{ Error: { Code: "User.RefreshTokenInvalid" } } =>
-                //Results.Problem(ResultExtensions.CreateProblemDetails(
-                //    "User Validation Error",
-                //    StatusCodes.Status401Unauthorized,
-                //    result.Error,
-                //    result.Errors)),
-                
-                //{ Error: { Code: "User.RefreshTokenMissing" } } =>
-                //Results.Problem(ResultExtensions.CreateProblemDetails(
-                //    "User Validation Error",
-                //    StatusCodes.Status401Unauthorized,
-                //    result.Error,
-                //    result.Errors)),
-                
-                //{ Error: { Code: "ValidationError" } } =>
-                //Results.BadRequest(ResultExtensions.CreateProblemDetails(
-                //    "Validation Error",
-                //    StatusCodes.Status400BadRequest,
-                //    result.Error,
-                //    result.Errors)),
+                { Error: { Code: "PasswordMismatch" } } =>
+                Results.BadRequest(ResultExtensions.CreateProblemDetails(
+                    "Password Mismatch",
+                    StatusCodes.Status400BadRequest,
+                    result.Error)),
 
                 _ => Results.Problem(ResultExtensions.CreateProblemDetails(
-                    "Internal server error", 
-                    StatusCodes.Status500InternalServerError, 
+                    "Internal server error",
+                    StatusCodes.Status500InternalServerError,
                     result.Error))
             };
-        
+
     }
 }

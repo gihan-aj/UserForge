@@ -16,6 +16,6 @@ namespace Application.Services
         Task<Result<string[]>> GetRolesAsync(User user);
         Task<Result> PersistRefreshToken(User user, string refreshToken);
         Task<Result<User>> GetByRefreshToken(string refreshToken);
-
+        Task<Result> ChangePasswordAsync(string userId, string oldPassword, string newPassword, string confirmNewPassword);
     }
 }

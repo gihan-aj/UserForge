@@ -1,13 +1,17 @@
 using Application.Configurations;
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using FluentValidation.AspNetCore;
 using Infrastructure;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Collections.Generic;
 using System.Text;
 using WebAPI.Extensions;
 using WebAPI.Infrastructure;
+using WebAPI.OpenApi;
 using WebAPI.ServiceRegistrar;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +36,25 @@ builder.Services.AddControllers();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+// Api versioning
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1);
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+    //options.ApiVersionReader = ApiVersionReader.Combine(
+    //    new QueryStringApiVersionReader("api-version"),
+    //    new HeaderApiVersionReader("X-Version"),
+    //    new MediaTypeApiVersionReader("ver"));
+})
+    .AddMvc()
+    .AddApiExplorer(options =>
+    {
+        options.GroupNameFormat = "'v'V";
+        options.SubstituteApiVersionInUrl = true;
+    });
+builder.Services.ConfigureOptions<ConfigureSwaggerGenOptions>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -44,10 +67,23 @@ using (var scope = app.Services.CreateScope())
     await DataSeeder.SeedRolesAndUserAsync(services);
 }
 
+app.MapControllers();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        IReadOnlyList<ApiVersionDescription> descriptions = app.DescribeApiVersions();
+
+        foreach(ApiVersionDescription desc in descriptions)
+        {
+            string url = $"/swagger/{desc.GroupName}/swagger.json";
+            string name = desc.GroupName.ToUpperInvariant();
+
+            options.SwaggerEndpoint(url, name);
+        }
+    });
 
     app.ApplyMigrations();
 }
@@ -59,7 +95,5 @@ app.UseExceptionHandler();
 app.UseAuthentication();
 
 app.UseAuthorization();
-
-app.MapControllers();
 
 app.Run();

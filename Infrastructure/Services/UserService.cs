@@ -16,13 +16,11 @@ namespace Infrastructure.Services
     {
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly ITokenService _tokenService;
 
-        public UserService(RoleManager<IdentityRole> roleManager, UserManager<User> userManager, ITokenService tokenService)
+        public UserService(RoleManager<IdentityRole> roleManager, UserManager<User> userManager)
         {
             _roleManager = roleManager;
             _userManager = userManager;
-            _tokenService = tokenService;
         }
 
         public async Task<Result<User>> CreateAsync(string firstName, string lastName, string email, string password)
@@ -164,6 +162,28 @@ namespace Infrastructure.Services
             }
 
             return user;
+        }
+
+        public async Task<Result> ChangePasswordAsync(string userId, string oldPassword, string newPassword, string confirmNewPassword)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if(user is null)
+            {
+                return Result.Failure(UserErrors.NotFound.User(userId));
+            }
+
+            if(newPassword != confirmNewPassword)
+            {
+                return Result.Failure(UserErrors.Validation.PasswordMismatch);
+            }
+
+            var result = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
+            if (!result.Succeeded)
+            {
+                return CreateIdentityError(result.Errors);
+            }
+
+            return Result.Success();
         }
 
         /**
