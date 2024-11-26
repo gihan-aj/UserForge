@@ -20,14 +20,5 @@ namespace WebAPI.Extensions
                 Extensions = { { nameof(errors), errors } }
             };
 
-        public static ServiceResult<T> CreateProblemDetailsFromValidationErrors<T>(FluentValidation.Results.ValidationResult validationResult)
-        {
-            var errors = validationResult.Errors
-                .Select(failure => new Error(failure.ErrorCode, failure.ErrorMessage))
-                .ToArray();
-
-            return ServiceResult<T>.WithErrors(errors);
-
-        }
     }
 }

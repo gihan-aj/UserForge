@@ -45,7 +45,7 @@ namespace Infrastructure
                 .AddTokenProvider<EmailTokenProvider<User>>(TokenOptions.DefaultEmailProvider);
 
             services.AddTransient<IEmailService, EmailService>();
-            services.AddTransient<IAuthService, AuthService>();
+            services.AddTransient<IUserService, UserService>();
             services.AddTransient<ITokenService, TokenService>();
 
             return services;

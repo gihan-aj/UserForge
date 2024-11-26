@@ -5,13 +5,18 @@
         public static readonly Error None = new(string.Empty, string.Empty);
         public static readonly Error NullValue = new("Error.NullValue", "Null value was provided");
 
-        public Error(string code, string description)
+        public Error(string code, string description, List<Error>? subErrors = null)
         {
             Code = code;
             Description = description;
+            if (subErrors != null)
+            {
+                SubErrors.AddRange(subErrors);
+            }
         }
         public string Code { get; }
         public string Description { get; }
+        public List<Error> SubErrors { get; } = new();
 
         public static implicit operator Result(Error error) => Result.Failure(error);
 

@@ -3,6 +3,7 @@ using Application.Services;
 using Domain.Users;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
+using SharedKernal;
 using System;
 using System.Net;
 using System.Net.Mail;
@@ -22,41 +23,51 @@ namespace Infrastructure.Services
             _jwtSettings = jwtSettings.Value;
         }
 
-        public async Task SendConfirmationEmailAsync(User user, string token)
+        public async Task<Result> SendConfirmationEmailAsync(User user, string token)
         {
-            token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-
-            var clientUrl = _jwtSettings.ClientUrl;
-            var confirmEmailPath = _smtpSettings.ConfirmEmailPath;
-            var url = $"{clientUrl}/{confirmEmailPath}?token={token}&userId={user.Id}";
-
-            var appName = _smtpSettings.ApplicationName;
-
-            var body = CreateEmailBody(
-                "Email Confirmation",
-                user.FirstName,
-                "Please confirm your email address by clicking the button below:",
-                "Confirm Email",
-                url,
-                appName);
-
-            using var smtpClient = new SmtpClient(_smtpSettings.Host, _smtpSettings.Port)
+            try
             {
-                Credentials = new NetworkCredential(_smtpSettings.Username, _smtpSettings.Password),
-                EnableSsl = true
-            };
+                token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
-            var mailMessage = new MailMessage
+                var clientUrl = _jwtSettings.ClientUrl;
+                var confirmEmailPath = _smtpSettings.ConfirmEmailPath;
+                var url = $"{clientUrl}/{confirmEmailPath}?token={token}&userId={user.Id}";
+
+                var appName = _smtpSettings.ApplicationName;
+
+                var body = CreateEmailBody(
+                    "Email Confirmation",
+                    user.FirstName,
+                    "Please confirm your email address by clicking the button below:",
+                    "Confirm Email",
+                    url,
+                    appName);
+
+                using var smtpClient = new SmtpClient(_smtpSettings.Host, _smtpSettings.Port)
+                {
+                    Credentials = new NetworkCredential(_smtpSettings.Username, _smtpSettings.Password),
+                    EnableSsl = true
+                };
+
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress(_smtpSettings.Username, appName),
+                    Subject = "Confirm your email",
+                    Body = body,
+                    IsBodyHtml = true
+                };
+
+                mailMessage.To.Add(user.Email);
+
+                await smtpClient.SendMailAsync(mailMessage);
+
+                return Result.Success();
+            }
+            catch (Exception ex)
             {
-                From = new MailAddress(_smtpSettings.Username, appName),
-                Subject = "Confirm your email",
-                Body = body,
-                IsBodyHtml = true
-            };
-
-            mailMessage.To.Add(user.Email);
-
-            await smtpClient.SendMailAsync(mailMessage);
+                return Result.Failure(new("EmailServerError", ex.Message));
+            }
+            
         }
 
         private string CapitalizeFirstLetter(string name)

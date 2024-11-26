@@ -1,10 +1,11 @@
 ﻿using Domain.Users;
+using SharedKernal;
 using System.Threading.Tasks;
 
 namespace Application.Services
 {
     public interface IEmailService
     {
-        Task SendConfirmationEmailAsync(User user, string token);
+        Task<Result> SendConfirmationEmailAsync(User user, string token);
     }
 }
