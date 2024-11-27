@@ -297,7 +297,7 @@ namespace WebAPI.Controllers.v1
             return Results.NoContent();
         }
 
-        [HttpPut("forgot-password")]
+        [HttpPost("forgot-password")]
         [Authorize]
         public async Task<IResult> RequestPasswordReset([FromBody]ForgotPasswordRequest request)
         {
@@ -313,7 +313,7 @@ namespace WebAPI.Controllers.v1
                 return HandleFailure(validationResult);
             }
 
-            var userResult = await _userService.FindByEmailAsync(request.Email);
+            var userResult = await _userService.FindByEmailAsync(request.Email.ToLower());
             if (userResult.IsFailure)
             {
                 return HandleFailure(userResult);
@@ -339,9 +339,46 @@ namespace WebAPI.Controllers.v1
         }
 
         [HttpPost("reset-password")]
+        [Authorize]
         public async Task<IResult> ResetPassword([FromBody]ResetPasswordRequest request)
         {
             var result = await _userService.ResetPasswordAsync(request.UserId, request.Token, request.NewPassword);
+            if (result.IsFailure)
+            {
+                return HandleFailure(result);
+            }
+
+            return Results.NoContent();
+        }
+
+        [HttpPut("update")]
+        [Authorize]
+        public async Task<IResult> UpdateUser(UpdateUserRequest request)
+        {
+            if (request is null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            var validator = new UpdateUserRequestValidator();
+            var validationResult = ValidationHandler.Handle(validator.Validate(request));
+            if (validationResult.IsFailure)
+            {
+                return HandleFailure(validationResult);
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if(userId == null)
+            {
+                return HandleFailure(Result.Failure(UserErrors.Token.InvalidAccessToken));
+            }
+
+            var result = await _userService.UpdateUserAsync(
+                userId, 
+                request.FirstName.ToLower(), 
+                request.LastName.ToLower(), 
+                request.PhoneNumber.ToLower());
+
             if (result.IsFailure)
             {
                 return HandleFailure(result);
@@ -448,7 +485,7 @@ namespace WebAPI.Controllers.v1
                 { Error: { Code: "InvalidAccessToken" } } =>
                 Results.Problem(ResultExtensions.CreateProblemDetails(
                     "Invalid Access Token",
-                    StatusCodes.Status400BadRequest,
+                    StatusCodes.Status401Unauthorized,
                     result.Error)),
 
                 _ => Results.Problem(ResultExtensions.CreateProblemDetails(

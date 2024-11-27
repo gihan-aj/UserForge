@@ -217,6 +217,28 @@ namespace Infrastructure.Services
             return Result.Success();
         }
 
+        public async Task<Result> UpdateUserAsync(string userId, string firstName, string lastName, string phoneNumber)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if(user is null)
+            {
+                return Result.Failure(UserErrors.NotFound.User(userId));
+            }
+
+            user.FirstName = firstName;
+            user.LastName = lastName;
+            if(!string.IsNullOrEmpty(phoneNumber))
+                user.PhoneNumber = phoneNumber;
+
+            var updatedResult = await _userManager.UpdateAsync(user);
+            if (!updatedResult.Succeeded)
+            {
+                return CreateIdentityError(updatedResult.Errors);
+            }
+
+            return Result.Success();
+        }
+
         /**
          * Helper methods
          */
