@@ -68,6 +68,53 @@ namespace Infrastructure.Services
                 return Result.Failure(new("EmailServerError", ex.Message));
             }
             
+        } 
+        
+        public async Task<Result> SendPasswordResetEmailAsync(User user, string token)
+        {
+            try
+            {
+                token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+                var clientUrl = _jwtSettings.ClientUrl;
+                var resetPasswordPath = _smtpSettings.ResetPasswordPath;
+                var url = $"{clientUrl}/{resetPasswordPath}?token={token}&userId={user.Id}";
+
+                var appName = _smtpSettings.ApplicationName;
+
+                var body = CreateEmailBody(
+                    "Password Reset Request",
+                    user.FirstName,
+                    "To reset your password, please click the button below:",
+                    "Reset Password",
+                    url,
+                    appName);
+
+                using var smtpClient = new SmtpClient(_smtpSettings.Host, _smtpSettings.Port)
+                {
+                    Credentials = new NetworkCredential(_smtpSettings.Username, _smtpSettings.Password),
+                    EnableSsl = true
+                };
+
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress(_smtpSettings.Username, appName),
+                    Subject = "Password Reset Request",
+                    Body = body,
+                    IsBodyHtml = true
+                };
+
+                mailMessage.To.Add(user.Email);
+
+                await smtpClient.SendMailAsync(mailMessage);
+
+                return Result.Success();
+            }
+            catch (Exception ex)
+            {
+                return Result.Failure(new("EmailServerError", ex.Message));
+            }
+            
         }
 
         private string CapitalizeFirstLetter(string name)

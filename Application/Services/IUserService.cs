@@ -17,5 +17,7 @@ namespace Application.Services
         Task<Result> PersistRefreshToken(User user, string refreshToken);
         Task<Result<User>> GetByRefreshToken(string refreshToken);
         Task<Result> ChangePasswordAsync(string userId, string oldPassword, string newPassword, string confirmNewPassword);
+        Task<Result<string>> GeneratePasswordResetTokenAsync(User user);
+        Task<Result> ResetPasswordAsync(string userId, string token, string newPassword);
     }
 }

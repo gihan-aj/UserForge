@@ -190,6 +190,30 @@ namespace Infrastructure.Services
             return Result.Success();
         }
 
+        public async Task<Result<string>> GeneratePasswordResetTokenAsync(User user)
+        {
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            return token;
+        }
+
+        public async Task<Result> ResetPasswordAsync(string userId, string token, string newPassword)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if(user is null)
+            {
+                return Result.Failure(UserErrors.NotFound.User(userId));
+            }
+
+            var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+            if (!result.Succeeded)
+            {
+                return CreateIdentityError(result.Errors);
+            }
+
+            return Result.Success();
+        }
+
         /**
          * Helper methods
          */

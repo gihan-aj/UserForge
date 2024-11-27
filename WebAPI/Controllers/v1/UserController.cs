@@ -296,6 +296,46 @@ namespace WebAPI.Controllers.v1
             return Results.NoContent();
         }
 
+        [HttpPut("request-password-reset")]
+        [Authorize]
+        public async Task<IResult> RequestPasswordReset([FromBody]string email)
+        {
+            var userResult = await _userService.FindByEmailAsync(email);
+            if (userResult.IsFailure)
+            {
+                return HandleFailure(userResult);
+            }
+            var user = userResult.Value;
+
+            var tokenResult = await _userService.GeneratePasswordResetTokenAsync(user);
+            if (tokenResult.IsFailure)
+            {
+                return HandleFailure(tokenResult);
+            }
+
+            var token = tokenResult.Value;
+
+            var emailResult = await _emailService.SendPasswordResetEmailAsync(user, token);
+            if(emailResult.IsFailure)
+            {
+                return HandleFailure(emailResult);
+            }
+
+            return Results.NoContent();
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IResult> ResetPassword([FromBody]ResetPasswordRequest request)
+        {
+            var result = await _userService.ResetPasswordAsync(request.UserId, request.Token, request.NewPassword);
+            if (result.IsFailure)
+            {
+                return HandleFailure(result);
+            }
+
+            return Results.NoContent();
+        }
+
         //[HttpPost]
         //[Authorize(Roles = "Admin")]
         //public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
