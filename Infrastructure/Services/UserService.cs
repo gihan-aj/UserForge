@@ -205,7 +205,10 @@ namespace Infrastructure.Services
                 return Result.Failure(UserErrors.NotFound.User(userId));
             }
 
-            var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+            var decodedTokenBytes = WebEncoders.Base64UrlDecode(token);
+            var decodedToken = Encoding.UTF8.GetString(decodedTokenBytes);
+
+            var result = await _userManager.ResetPasswordAsync(user, decodedToken, newPassword);
             if (!result.Succeeded)
             {
                 return CreateIdentityError(result.Errors);

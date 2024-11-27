@@ -22,6 +22,9 @@ builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"
 // JWT
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JWT"));
 
+// Token setings
+builder.Services.Configure<TokenSettings>(builder.Configuration.GetSection("TokenSettings"));
+
 // Infrastructure
 builder.Services.AddInfrastructure(builder.Configuration);
 

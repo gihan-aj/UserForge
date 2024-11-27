@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System;
 
 namespace Infrastructure
@@ -16,6 +17,7 @@ namespace Infrastructure
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
             var connection = configuration.GetConnectionString("DefaultConnection");
+            var tokenSettings = configuration["TokenSettings:HmacSecretKey"];
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connection));
@@ -42,7 +44,8 @@ namespace Infrastructure
                 .AddRoleManager<RoleManager<IdentityRole>>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddPasswordValidator<PasswordValidator<User>>()
-                .AddTokenProvider<EmailTokenProvider<User>>(TokenOptions.DefaultEmailProvider);
+                .AddTokenProvider<EmailTokenProvider<User>>(TokenOptions.DefaultEmailProvider)
+                .AddTokenProvider<CustomPasswordResetTokenProvider<User>>(TokenOptions.DefaultProvider);
 
             services.AddTransient<IEmailService, EmailService>();
             services.AddTransient<IUserService, UserService>();
