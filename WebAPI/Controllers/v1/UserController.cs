@@ -1,6 +1,7 @@
 ﻿using Application.Configurations;
 using Application.Services;
 using Asp.Versioning;
+using Azure.Core;
 using Domain.Users;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
@@ -296,15 +297,28 @@ namespace WebAPI.Controllers.v1
             return Results.NoContent();
         }
 
-        [HttpPut("request-password-reset")]
+        [HttpPut("forgot-password")]
         [Authorize]
-        public async Task<IResult> RequestPasswordReset([FromBody]string email)
+        public async Task<IResult> RequestPasswordReset([FromBody]ForgotPasswordRequest request)
         {
-            var userResult = await _userService.FindByEmailAsync(email);
+            if (request is null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            var validator = new ForgotPasswordRequestValidator();
+            var validationResult = ValidationHandler.Handle(validator.Validate(request));
+            if (validationResult.IsFailure)
+            {
+                return HandleFailure(validationResult);
+            }
+
+            var userResult = await _userService.FindByEmailAsync(request.Email);
             if (userResult.IsFailure)
             {
                 return HandleFailure(userResult);
             }
+
             var user = userResult.Value;
 
             var tokenResult = await _userService.GeneratePasswordResetTokenAsync(user);
