@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using SharedKernal;
+using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -22,14 +23,14 @@ namespace WebAPI.Controllers.v1
     [ApiController]
     [Route("api/v{apiVersion:apiVersion}/[controller]")]
     [ApiVersion("1")]
-    public class UserController : ControllerBase
+    public class UsersController : ControllerBase
     {
         private readonly IEmailService _emailService;
         private readonly IUserService _userService;
         private readonly ITokenService _tokenService;
         private readonly JwtSettings _jwtSettings;
 
-        public UserController(IEmailService emailService, IUserService userService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings)
+        public UsersController(IEmailService emailService, IUserService userService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings)
         {
             _emailService = emailService;
             _userService = userService;
@@ -37,8 +38,28 @@ namespace WebAPI.Controllers.v1
             _jwtSettings = jwtSettings.Value;
         }
 
+        /// <summary>
+        /// Register a new user
+        /// </summary>
+        /// <remarks>
+        /// Sample request:
+        /// 
+        ///     POST api/Users
+        ///     {
+        ///         "firstName" : "John",
+        ///         "lastName" : "Doe",
+        ///         "email" : "user@email.com",
+        ///         "password" : "Password1234"
+        ///     }
+        /// </remarks>
+        /// <param name="request">The user registration details.</param>
+        /// <returns>Confirmation of user registration.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
         [HttpPost("register")]
         [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public async Task<IResult> Register([FromBody] RegisterRequest request)
         {
             if (request is null)
