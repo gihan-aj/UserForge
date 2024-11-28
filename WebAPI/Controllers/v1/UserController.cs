@@ -89,25 +89,8 @@ namespace WebAPI.Controllers.v1
                 return HandleFailure(emailResult);
             }
 
-            var location = Url.Action(nameof(GetById), new { id = user.Id }) ?? $"/{user.Id}";
+            var location = Url.Action(nameof(GetUser), new { id = user.Id }) ?? $"/{user.Id}";
             return Results.CreatedAtRoute(location);
-        }
-
-        [HttpGet("{id}")]
-        [Authorize(Roles = UserRoles.User)]
-        public async Task<IResult> GetById(string id)
-        {
-            var result = await _userService.FindByIdAsync(id);
-            if (result.IsFailure)
-            {
-                return HandleFailure(result);
-            }
-
-            var user = result.Value;
-
-            var userResponse = new GetUserResponse(id, user.UserName, user.FirstName, user.LastName);
-
-            return Results.Ok(userResponse);
         }
         
         [HttpGet("logged-in-user-details")]
@@ -338,7 +321,7 @@ namespace WebAPI.Controllers.v1
             return Results.NoContent();
         }
 
-        [HttpPost("reset-password")]
+        [HttpPut("reset-password")]
         [Authorize]
         public async Task<IResult> ResetPassword([FromBody]ResetPasswordRequest request)
         {
@@ -379,6 +362,72 @@ namespace WebAPI.Controllers.v1
                 request.LastName.ToLower(), 
                 request.PhoneNumber.ToLower());
 
+            if (result.IsFailure)
+            {
+                return HandleFailure(result);
+            }
+
+            return Results.NoContent();
+        }
+
+        [HttpPut("request-email-change")]
+        [Authorize]
+        public async Task<IResult> RequestEmailChange(ChangeEmailRequest request)
+        {
+            if (request is null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            var validator = new ChangeEmailRequestValidator();
+            var validationResult = ValidationHandler.Handle(validator.Validate(request));
+            if (validationResult.IsFailure)
+            {
+                return HandleFailure(validationResult);
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return HandleFailure(Result.Failure(UserErrors.Token.InvalidAccessToken));
+            }
+
+            var userResult = await _userService.FindByIdAsync(userId);
+            if (userResult.IsFailure)
+            {
+                return HandleFailure(userResult);
+            }
+
+            var user = userResult.Value;
+
+            var tokenResult = await _userService.GenerateChangeEmailTokenAsync(userId, request.NewEmail, request.Password);
+            if(tokenResult.IsFailure)
+            {
+                return HandleFailure(tokenResult);
+            }
+
+            var token = tokenResult.Value;
+
+            var emailResult = await _emailService.SendEmailChangeEmailAsync(user, token, request.NewEmail);
+            if (emailResult.IsFailure)
+            {
+                return HandleFailure(emailResult);
+            }
+
+            var deactivateResult = await _userService.DeactivateAccountAsync(userId);
+            if (deactivateResult.IsFailure)
+            {
+                return HandleFailure(deactivateResult);
+            }
+
+            return Results.NoContent();
+        }
+
+        [HttpPut("confirm-email-change")]
+        [AllowAnonymous]
+        public async Task<IResult> ConfirmEmailChange([FromQuery] string userId, [FromQuery] string newEmail, [FromQuery] string token)
+        {
+            var result = await _userService.ChangeEmailAsync(userId, newEmail.ToLower(), token);
             if (result.IsFailure)
             {
                 return HandleFailure(result);
@@ -486,6 +535,12 @@ namespace WebAPI.Controllers.v1
                 Results.Problem(ResultExtensions.CreateProblemDetails(
                     "Invalid Access Token",
                     StatusCodes.Status401Unauthorized,
+                    result.Error)),
+                
+                { Error: { Code: "InvalidPassword" } } =>
+                Results.BadRequest(ResultExtensions.CreateProblemDetails(
+                    "Invalid Password",
+                    StatusCodes.Status400BadRequest,
                     result.Error)),
 
                 _ => Results.Problem(ResultExtensions.CreateProblemDetails(

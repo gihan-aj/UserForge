@@ -239,6 +239,72 @@ namespace Infrastructure.Services
             return Result.Success();
         }
 
+        public async Task<Result<string>> GenerateChangeEmailTokenAsync(string userId, string newEmail, string password)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user is null)
+            {
+                return Result.Failure<string>(UserErrors.NotFound.User(userId));
+            }
+
+            var isPasswordValid = await _userManager.CheckPasswordAsync(user, password);
+            if (!isPasswordValid)
+            {
+                return Result.Failure<string>(UserErrors.Validation.InvalidPassword);
+            }
+
+            var token = await _userManager.GenerateChangeEmailTokenAsync(user, newEmail);
+
+            return token;
+        }
+
+        public async Task<Result> DeactivateAccountAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user is null)
+            {
+                return Result.Failure(UserErrors.NotFound.User(userId));
+            }
+
+            user.EmailConfirmed = false;
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                return CreateIdentityError(updateResult.Errors);
+            }
+
+            return Result.Success();
+        }
+
+        public async Task<Result> ChangeEmailAsync(string userId, string newEmail, string token)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user is null)
+            {
+                return Result.Failure(UserErrors.NotFound.User(userId));
+            }
+
+            var decodedTokenBytes = WebEncoders.Base64UrlDecode(token);
+            var decodedToken = Encoding.UTF8.GetString(decodedTokenBytes);
+
+            var emailChangeResult = await _userManager.ChangeEmailAsync(user, newEmail, decodedToken);
+            if (!emailChangeResult.Succeeded)
+            {
+                return CreateIdentityError(emailChangeResult.Errors);
+            }
+
+            user.NormalizedEmail = _userManager.NormalizeEmail(user.Email);
+            user.UserName = newEmail;
+            user.EmailConfirmed = true;
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                return CreateIdentityError(updateResult.Errors);
+            }
+
+            return Result.Success();
+        }
+
         /**
          * Helper methods
          */

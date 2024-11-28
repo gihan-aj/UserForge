@@ -20,5 +20,8 @@ namespace Application.Services
         Task<Result<string>> GeneratePasswordResetTokenAsync(User user);
         Task<Result> ResetPasswordAsync(string userId, string token, string newPassword);
         Task<Result> UpdateUserAsync(string userId, string firstName, string lastName, string phoneNumber);
+        Task<Result<string>> GenerateChangeEmailTokenAsync(string userId, string newEmail, string password);
+        Task<Result> DeactivateAccountAsync(string userId);
+        Task<Result> ChangeEmailAsync(string userId, string newEmail, string password);
     }
 }

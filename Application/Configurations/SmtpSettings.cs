@@ -9,5 +9,6 @@
         public string ApplicationName { get; set; }
         public string ConfirmEmailPath { get; set; }
         public string ResetPasswordPath { get; set; }
+        public string ChangeEmailPath { get; set; }
     }
 }

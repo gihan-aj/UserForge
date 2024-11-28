@@ -116,6 +116,53 @@ namespace Infrastructure.Services
             }
             
         }
+        
+        public async Task<Result> SendEmailChangeEmailAsync(User user, string token, string newEmail)
+        {
+            try
+            {
+                token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+                var clientUrl = _jwtSettings.ClientUrl;
+                var changeEmailPath = _smtpSettings.ChangeEmailPath;
+                var url = $"{clientUrl}/{changeEmailPath}?token={token}&userId={user.Id}";
+
+                var appName = _smtpSettings.ApplicationName;
+
+                var body = CreateEmailBody(
+                    "Change Email Request",
+                    user.FirstName,
+                    "To change your email, please click the button below:",
+                    "Change Email",
+                    url,
+                    appName);
+
+                using var smtpClient = new SmtpClient(_smtpSettings.Host, _smtpSettings.Port)
+                {
+                    Credentials = new NetworkCredential(_smtpSettings.Username, _smtpSettings.Password),
+                    EnableSsl = true
+                };
+
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress(_smtpSettings.Username, appName),
+                    Subject = "Change Email Request",
+                    Body = body,
+                    IsBodyHtml = true
+                };
+
+                mailMessage.To.Add(newEmail);
+
+                await smtpClient.SendMailAsync(mailMessage);
+
+                return Result.Success();
+            }
+            catch (Exception ex)
+            {
+                return Result.Failure(new("EmailServerError", ex.Message));
+            }
+            
+        }
 
         private string CapitalizeFirstLetter(string name)
         {

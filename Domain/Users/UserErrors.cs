@@ -7,6 +7,7 @@ namespace Domain.Users
         public static class Validation
         {
             public static Error InvalidCredentials => new("InvalidCredentials", "The provided username or password is incorrect.");
+            public static Error InvalidPassword => new("InvalidPassword", "The provided password is incorrect.");
             public static Error PasswordMismatch => new("PasswordMismatch", "The new password and confirmation do not match.");
             public static Error WeakPassword => new("WeakPassword", "The password does not meet the required complexity.");
             public static Error InvalidEmailFormat => new("InvalidEmailFormat", "The provided email format is invalid.");

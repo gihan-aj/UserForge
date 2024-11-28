@@ -8,5 +8,6 @@ namespace Application.Services
     {
         Task<Result> SendConfirmationEmailAsync(User user, string token);
         Task<Result> SendPasswordResetEmailAsync(User user, string token);
+        Task<Result> SendEmailChangeEmailAsync(User user, string token, string newEmail);
     }
 }
