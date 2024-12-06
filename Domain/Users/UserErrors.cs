@@ -38,6 +38,7 @@ namespace Domain.Users
 
         public static class Authorization
         {
+            public static Error EmailNotConfirmed(string email) => new("EmailNotConfirmed", $"The email: {email} is not confirmed. Confirm you email to activate your account");
             public static Error AccessDenied => new("AccessDenied", "You do not have permission to perform this action.");
             public static Error RoleNotAssigned => new("RoleNotAssigned", "The user does not have the required role for this action.");
         }

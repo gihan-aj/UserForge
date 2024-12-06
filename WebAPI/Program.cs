@@ -1,45 +1,34 @@
 using Application.Configurations;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
-using FluentValidation.AspNetCore;
 using Infrastructure;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Collections.Generic;
-using System.Text;
 using WebAPI.Extensions;
 using WebAPI.Infrastructure;
 using WebAPI.OpenApi;
-using WebAPI.ServiceRegistrar;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// SMTP server settings
-builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
+// Settings
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"))
+    .Configure<JwtSettings>(builder.Configuration.GetSection("JWT"))
+    .Configure<TokenSettings>(builder.Configuration.GetSection("TokenSettings"));
 
-// JWT
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JWT"));
-
-// Token setings
-builder.Services.Configure<TokenSettings>(builder.Configuration.GetSection("TokenSettings"));
-
-// Infrastructure
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Authentication with JWT
-builder.Services.AddJWTAuthentication(builder.Configuration);
-
-builder.Services.AddAuthorization();
+builder.Services.AddJWTAuthentication(builder.Configuration)
+    .AddAuthorization();
 
 builder.Services.AddControllers();
 
 // Global Exception handling
-builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>()
+    .AddProblemDetails();
 
-// Api versioning
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new ApiVersion(1);
@@ -57,6 +46,19 @@ builder.Services.ConfigureOptions<ConfigureSwaggerGenOptions>();
 // swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+var devOrigin = "angular_front";
+builder.Services.AddCors(
+    options =>
+    {
+        options.AddPolicy(name: devOrigin,
+            policy =>
+            {
+                policy.WithOrigins("http://localhost:4200")
+                .AllowAnyHeader()
+                .AllowAnyMethod(); ;
+            });
+    });
 
 var app = builder.Build();
 
@@ -91,6 +93,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseExceptionHandler();
+
+app.UseCors(devOrigin);
 
 app.UseAuthentication();
 

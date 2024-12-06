@@ -14,7 +14,6 @@ using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using WebAPI.Extensions;
 using WebAPI.Infrastructure;
 using WebAPI.Models.Users;
 
@@ -131,8 +130,8 @@ namespace WebAPI.Controllers.v1
                 return HandleFailure(emailResult);
             }
 
-            var location = Url.Action(nameof(GetUser), new { id = user.Id }) ?? $"/{user.Id}";
-            return Results.CreatedAtRoute(location);
+            //var location = Url.Action(nameof(GetUser), new { id = user.Id }) ?? $"/{user.Id}";
+            return Results.CreatedAtRoute();
         }
 
         /// <summary>
@@ -965,74 +964,80 @@ namespace WebAPI.Controllers.v1
                 { IsSuccess: true } => throw new InvalidOperationException(),
 
                 { Error: { Code: "ValidationError" } } =>
-                Results.BadRequest(ResultExtensions.CreateProblemDetails(
+                Results.BadRequest(ResultCreationHandler.CreateProblemDetails(
                     "Validation Errors",
                     StatusCodes.Status400BadRequest,
                     result.Error,
                     result.Error.SubErrors.ToArray())),
 
                 { Error: { Code: "IdentityError" } } =>
-                Results.BadRequest(ResultExtensions.CreateProblemDetails(
-                    "Identity Errors",
+                Results.BadRequest(ResultCreationHandler.CreateProblemDetails(
+                    "Validation Errors",
                     StatusCodes.Status400BadRequest,
                     result.Error,
                     result.Error.SubErrors.ToArray())),
 
                 { Error: { Code: "EmailAlreadyExists" } } =>
-                Results.Problem(ResultExtensions.CreateProblemDetails(
+                Results.Problem(ResultCreationHandler.CreateProblemDetails(
                     "Email Already Exists",
                     StatusCodes.Status409Conflict,
                     result.Error)),
 
                 { Error: { Code: "UserNotFound" } } =>
-                Results.NotFound(ResultExtensions.CreateProblemDetails(
+                Results.NotFound(ResultCreationHandler.CreateProblemDetails(
                     "User Not Found",
                     StatusCodes.Status404NotFound,
                     result.Error)),
 
                 { Error: { Code: "EmailAlreadyConfirmed" } } =>
-                Results.Problem(ResultExtensions.CreateProblemDetails(
+                Results.Problem(ResultCreationHandler.CreateProblemDetails(
                     "Email Already Confirmed",
                     StatusCodes.Status409Conflict,
                     result.Error)),
+                
+                { Error: { Code: "EmailNotConfirmed" } } =>
+                Results.Problem(ResultCreationHandler.CreateProblemDetails(
+                    "Email Not Confirmed",
+                    StatusCodes.Status401Unauthorized,
+                    result.Error)),
 
                 { Error: { Code: "InvalidCredentials" } } =>
-                Results.BadRequest(ResultExtensions.CreateProblemDetails(
+                Results.BadRequest(ResultCreationHandler.CreateProblemDetails(
                     "Invalid Credentials",
                     StatusCodes.Status400BadRequest,
                     result.Error)),
 
                 { Error: { Code: "MissingRefreshToken" } } =>
-                Results.Problem(ResultExtensions.CreateProblemDetails(
+                Results.Problem(ResultCreationHandler.CreateProblemDetails(
                     "User Validation Error",
                     StatusCodes.Status400BadRequest,
                     result.Error)),
 
                 { Error: { Code: "InvalidRefreshToken" } } =>
-                Results.Problem(ResultExtensions.CreateProblemDetails(
+                Results.Problem(ResultCreationHandler.CreateProblemDetails(
                     "User Validation Error",
                     StatusCodes.Status400BadRequest,
                     result.Error)),
 
                 { Error: { Code: "PasswordMismatch" } } =>
-                Results.BadRequest(ResultExtensions.CreateProblemDetails(
+                Results.BadRequest(ResultCreationHandler.CreateProblemDetails(
                     "Password Mismatch",
                     StatusCodes.Status400BadRequest,
                     result.Error)),
                 
                 { Error: { Code: "InvalidAccessToken" } } =>
-                Results.Problem(ResultExtensions.CreateProblemDetails(
+                Results.Problem(ResultCreationHandler.CreateProblemDetails(
                     "Invalid Access Token",
                     StatusCodes.Status401Unauthorized,
                     result.Error)),
                 
                 { Error: { Code: "InvalidPassword" } } =>
-                Results.BadRequest(ResultExtensions.CreateProblemDetails(
+                Results.BadRequest(ResultCreationHandler.CreateProblemDetails(
                     "Invalid Password",
                     StatusCodes.Status400BadRequest,
                     result.Error)),
 
-                _ => Results.Problem(ResultExtensions.CreateProblemDetails(
+                _ => Results.Problem(ResultCreationHandler.CreateProblemDetails(
                     "Internal server error",
                     StatusCodes.Status500InternalServerError,
                     result.Error))

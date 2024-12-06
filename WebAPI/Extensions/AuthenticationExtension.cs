@@ -4,13 +4,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
-namespace WebAPI.ServiceRegistrar
+namespace WebAPI.Extensions
 {
-    public static class Authentication
+    public static class AuthenticationExtension
     {
+
         public static IServiceCollection AddJWTAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
-            var key = Encoding.UTF8.GetBytes(configuration["JWT:Key"]);
+            var key = Encoding.UTF8.GetBytes(configuration["JWT:Key"]!);
 
             services.AddAuthentication(options =>
             {
@@ -23,13 +24,13 @@ namespace WebAPI.ServiceRegistrar
                     options.SaveToken = true;
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
-                        ValidateIssuer  = true,
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ValidateIssuer = true,
                         ValidateAudience = true,
                         ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
                         ValidIssuer = configuration["JWT:Issuer"],
                         ValidAudience = configuration["JWT:ClientUrl"],
-                        IssuerSigningKey = new SymmetricSecurityKey(key),
                     };
                 });
 

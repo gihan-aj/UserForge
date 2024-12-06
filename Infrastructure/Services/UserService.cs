@@ -129,6 +129,11 @@ namespace Infrastructure.Services
                 return Result.Failure<User>(UserErrors.Validation.InvalidCredentials);
             }
 
+            if (!user.EmailConfirmed)
+            {
+                return Result.Failure<User>(UserErrors.Authorization.EmailNotConfirmed(username));
+            }
+
             if(!await _userManager.CheckPasswordAsync(user, password))
             {
                 return Result.Failure<User>(UserErrors.Validation.InvalidCredentials);
@@ -314,7 +319,7 @@ namespace Infrastructure.Services
                 .Select(identityError => new Error(identityError.Code, identityError.Description))
                 .ToList();
 
-            var error = new Error("IdentityError", "Identity Error Occured.", subErrors);
+            var error = new Error("IdentityError", "One or more validation errors occured.", subErrors);
 
             return Result.Failure<T>(error);
         }        
@@ -325,7 +330,7 @@ namespace Infrastructure.Services
                 .Select(identityError => new Error(identityError.Code, identityError.Description))
                 .ToList();
 
-            var error = new Error("IdentityError", "Identity Error Occured.", subErrors);
+            var error = new Error("IdentityError", "One or more validation errors occured.", subErrors);
 
             return Result.Failure(error);
         }    

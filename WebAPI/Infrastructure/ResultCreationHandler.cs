@@ -2,9 +2,9 @@
 using SharedKernal;
 using System.Linq;
 
-namespace WebAPI.Extensions
+namespace WebAPI.Infrastructure
 {
-    public static class ResultExtensions
+    public static class ResultCreationHandler
     {
         public static ProblemDetails CreateProblemDetails(
             string title,
