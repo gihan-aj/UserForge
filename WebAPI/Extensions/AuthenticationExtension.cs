@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -9,7 +10,7 @@ namespace WebAPI.Extensions
     public static class AuthenticationExtension
     {
 
-        public static IServiceCollection AddJWTAuthentication(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddJWTAuth(this IServiceCollection services, IConfiguration configuration)
         {
             var key = Encoding.UTF8.GetBytes(configuration["JWT:Key"]!);
 
@@ -33,6 +34,14 @@ namespace WebAPI.Extensions
                         ValidAudience = configuration["JWT:ClientUrl"],
                     };
                 });
+
+            services.AddAuthorization(options =>
+            {
+                options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+                .RequireAuthenticatedUser()
+                .Build();
+            });
 
             return services;
         }

@@ -1,7 +1,10 @@
+using Asp.Versioning.Builder;
 using Infrastructure;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using WebAPI.Controllers.v2;
 using WebAPI.Extensions;
 using WebAPI.Infrastructure;
 
@@ -12,8 +15,7 @@ builder.Services.ConfigureAppSettings(configuration);
 
 builder.Services.AddInfrastructure(configuration);
 
-builder.Services.AddJWTAuthentication(configuration)
-                .AddAuthorization();
+builder.Services.AddJWTAuth(configuration);
 
 builder.Services.AddControllers();
 
@@ -27,6 +29,17 @@ var app = builder.Build();
 await app.SeedInitialDataAsync();
 
 app.MapControllers();
+
+ApiVersionSet apiVersionSet = app.NewApiVersionSet()
+    .HasApiVersion(new Asp.Versioning.ApiVersion(2))
+    .ReportApiVersions()
+    .Build();
+
+RouteGroupBuilder versionedGroup = app.MapGroup("api/v{apiVersion:apiVersion}")
+    .WithApiVersionSet(apiVersionSet);
+
+versionedGroup.MapUserEndpoints();
+
 
 if (app.Environment.IsDevelopment())
 {

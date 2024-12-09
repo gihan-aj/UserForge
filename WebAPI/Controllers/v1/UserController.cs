@@ -22,14 +22,14 @@ namespace WebAPI.Controllers.v1
     [ApiController]
     [Route("api/v{apiVersion:apiVersion}/[controller]")]
     [ApiVersion("1")]
-    public class UsersController : ControllerBase
+    public class UserController : ControllerBase
     {
         private readonly IEmailService _emailService;
         private readonly IUserService _userService;
         private readonly ITokenService _tokenService;
         private readonly JwtSettings _jwtSettings;
 
-        public UsersController(IEmailService emailService, IUserService userService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings)
+        public UserController(IEmailService emailService, IUserService userService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings)
         {
             _emailService = emailService;
             _userService = userService;
@@ -167,7 +167,7 @@ namespace WebAPI.Controllers.v1
         /// <response code="401">If the user is not authenticated or the token is invalid.</response>
         /// <response code="404">If the user details cannot be found in the system.</response>
         /// <response code="500">If an internal server error occurs.</response>
-        [HttpGet("logged-in-user-details")]
+        [HttpGet]
         [Authorize(Roles = UserRoles.User)]
         [ProducesResponseType(typeof(GetUserResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -184,7 +184,7 @@ namespace WebAPI.Controllers.v1
 
             var user = result.Value;
 
-            var userResponse = new GetUserResponse(id, user.UserName, user.FirstName, user.LastName);
+            var userResponse = new GetUserResponse(id, user.UserName!, user.FirstName, user.LastName);
 
             return Results.Ok(userResponse);
         }
@@ -329,7 +329,8 @@ namespace WebAPI.Controllers.v1
         /// **Sample Response for Success:**
         /// ```json
         /// {
-        ///     "userName": "john.doe",
+        ///     "id": "john.doe",
+        ///     "email": "john.doe",
         ///     "firstName": "John",
         ///     "lastName": "Doe",
         ///     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -399,12 +400,12 @@ namespace WebAPI.Controllers.v1
             HttpContext.Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true, // For production , HTTPS
-                SameSite = SameSiteMode.Strict,
+                Secure = false, // For production , HTTPS
+                SameSite = SameSiteMode.None,
                 Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays)
             });
 
-            return Results.Ok(new LoginResponse(user.UserName, user.FirstName, user.LastName, accessToken));
+            return Results.Ok(new LoginResponse(user.Id, user.Email!, user.FirstName, user.LastName, accessToken));
         }
 
         /// <summary>
@@ -488,8 +489,8 @@ namespace WebAPI.Controllers.v1
             HttpContext.Response.Cookies.Append("refreshToken", newRefreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true, // For production , HTTPS
-                SameSite = SameSiteMode.Strict,
+                Secure = false, // For production , HTTPS
+                SameSite = SameSiteMode.None,
                 Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays)
             });
 
@@ -499,7 +500,7 @@ namespace WebAPI.Controllers.v1
             // JWT
             string accessToken = _tokenService.CreateJwtToken(user, rolesResult.Value);
 
-            return Results.Ok(new LoginResponse(user.UserName, user.FirstName, user.LastName, accessToken));
+            return Results.Ok(new LoginResponse(user.Id, user.Email!, user.FirstName, user.LastName, accessToken));
         }
 
         /// <summary>
