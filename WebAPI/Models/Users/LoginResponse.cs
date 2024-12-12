@@ -1,10 +1,7 @@
 ﻿namespace WebAPI.Models.Users
 {
-    public record LoginResponse(
-        string Id, 
-        string Email, 
-        string FirstName, 
-        string LastName, 
+    public record LoginResponse( 
         string AccessToken,
-        string? RefreshToken = null);
+        string RefreshToken,
+        UserResponse User);
 }

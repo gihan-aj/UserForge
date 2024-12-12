@@ -33,14 +33,16 @@ namespace Infrastructure.Persistence
                     UserName = adminEmail,
                     Email = adminEmail,
                     EmailConfirmed = true,
-                    FirstName = "System",
-                    LastName = "Administrator"
+                    FirstName = "system",
+                    LastName = "administrator",
+                    TwoFactorEnabled = false,
                 };
 
                 var result = await userManager.CreateAsync(adminUser, "Admin@123");
                 if (result.Succeeded)
                 {
-                    await userManager.AddToRolesAsync(adminUser, [UserRoles.Admin, UserRoles.Manager, UserRoles.User]);
+                    //await userManager.AddToRoleAsync(adminUser, UserRoles.Admin);
+                    await userManager.AddToRolesAsync(adminUser, [UserRoles.Admin, UserRoles.User]);
                 }
             }
         }

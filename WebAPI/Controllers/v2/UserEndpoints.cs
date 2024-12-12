@@ -62,7 +62,13 @@ namespace WebAPI.Controllers.v2
                     return HandleFailure(persistRefreshTokenResult);
                 }
 
-                return Results.Ok(new LoginResponse(user.Id, user.Email!, user.FirstName, user.LastName, accessToken, refreshToken));
+                return Results.Ok(new LoginResponse(
+                    accessToken,
+                    refreshToken,
+                    new UserResponse(
+                        user.Id,
+                        user.FirstName,
+                        user.LastName)));
             }
 
             app.MapPost("user/refresh", Refresh).AllowAnonymous();
@@ -100,8 +106,14 @@ namespace WebAPI.Controllers.v2
 
                 // JWT
                 string accessToken = tokenService.CreateJwtToken(user, rolesResult.Value);
-
-                return Results.Ok(new LoginResponse(user.Id, user.Email!, user.FirstName, user.LastName, accessToken, newRefreshToken));
+            
+                return Results.Ok(new LoginResponse(
+                    accessToken, 
+                    newRefreshToken, 
+                    new UserResponse(
+                        user.Id, 
+                        user.FirstName, 
+                        user.LastName)));
             }
 
             app.MapGet("user", GetUserDetails).RequireAuthorization();
@@ -111,6 +123,11 @@ namespace WebAPI.Controllers.v2
                 IUserService userService)
             {
                 var id = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if(id is null)
+                {
+                    return HandleFailure(Result.Failure(UserErrors.Token.InvalidAccessToken));
+                }
+
                 var result = await userService.FindByIdAsync(id);
                 if (result.IsFailure)
                 {
@@ -121,11 +138,77 @@ namespace WebAPI.Controllers.v2
 
                 var userResponse = new GetUserResponse(
                     id, 
-                    userDetails.UserName!, 
+                    userDetails.Email!, 
                     userDetails.FirstName, 
-                    userDetails.LastName);
+                    userDetails.LastName,
+                    userDetails.PhoneNumber,
+                    userDetails.DateOfBirth);
 
                 return Results.Ok(userResponse);
+            }
+
+            app.MapPost("user/register", Register).AllowAnonymous();
+
+            static async Task<IResult> Register(
+                RegisterRequest request,
+                IUserService userService,
+                IEmailService emailService)
+            {
+                if (request is null)
+                {
+                    throw new ArgumentNullException(nameof(request));
+                }
+
+                var validator = new RegisterRequestValidator();
+                var validationResult = ValidationHandler.Handle(validator.Validate(request));
+                if (validationResult.IsFailure)
+                {
+                    return HandleFailure(validationResult);
+                }
+
+                var result = await userService.CreateAsync(
+                    request.FirstName.ToLower(),
+                    request.LastName.ToLower(),
+                    request.Email.ToLower(),
+                    request.PhoneNumber,
+                    request.DateOfBirth,
+                    request.Password);
+
+                if (result.IsFailure)
+                {
+                    return HandleFailure(result);
+                }
+
+                var user = result.Value;
+
+                // Add user role
+                var addToRoleResult = await userService.AddToRoleAsync(user, UserRoles.User);
+                if (addToRoleResult.IsFailure)
+                {
+                    return HandleFailure(result);
+                }
+
+                var emailConfirmationTokenResult = await userService.GenerateEmailConfirmationTokenAsync(user);
+                if (emailConfirmationTokenResult.IsFailure)
+                {
+                    return HandleFailure(emailConfirmationTokenResult);
+                }
+
+                var emailConfirmationToken = emailConfirmationTokenResult.Value;
+
+                // Confirm link via email
+                var emailResult = await emailService.SendConfirmationEmailAsync(user, emailConfirmationToken);
+                if (emailResult.IsFailure)
+                {
+                    return HandleFailure(emailResult);
+                }
+
+                return Results.Created(
+                    uri: $"/users/{user.Id}",
+                    value: new
+                    {
+                        Message = "User created successfully. Please check your email to confirm your account."
+                    });
             }
         }
 
@@ -174,13 +257,19 @@ namespace WebAPI.Controllers.v2
 
                 { Error: { Code: "MissingRefreshToken" } } =>
                 Results.Problem(ResultCreationHandler.CreateProblemDetails(
-                    "User Validation Error",
+                    "Token Error",
                     StatusCodes.Status401Unauthorized,
                     result.Error)),
 
                 { Error: { Code: "InvalidRefreshToken" } } =>
                 Results.Problem(ResultCreationHandler.CreateProblemDetails(
-                    "User Validation Error",
+                    "Token Error",
+                    StatusCodes.Status401Unauthorized,
+                    result.Error)),
+                
+                { Error: { Code: "InvalidAccessToken" } } =>
+                Results.Problem(ResultCreationHandler.CreateProblemDetails(
+                    "Token Error",
                     StatusCodes.Status401Unauthorized,
                     result.Error)),
 

@@ -1,4 +1,12 @@
-﻿namespace WebAPI.Models.Users
+﻿using System;
+
+namespace WebAPI.Models.Users
 {
-    public record GetUserResponse(string Id, string Username, string FirstName, string LastName);
+    public record GetUserResponse(
+        string Id, 
+        string Email, 
+        string FirstName, 
+        string LastName,
+        string? PhoneNumber,
+        DateTime? DateOfBirth);
 }

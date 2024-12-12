@@ -98,6 +98,8 @@ namespace WebAPI.Controllers.v1
                 request.FirstName.ToLower(),
                 request.LastName.ToLower(),
                 request.Email.ToLower(),
+                request.PhoneNumber,
+                request.DateOfBirth,
                 request.Password);
 
             if (result.IsFailure)
@@ -184,7 +186,13 @@ namespace WebAPI.Controllers.v1
 
             var user = result.Value;
 
-            var userResponse = new GetUserResponse(id, user.UserName!, user.FirstName, user.LastName);
+            var userResponse = new GetUserResponse(
+                id, 
+                user.Email!, 
+                user.FirstName, 
+                user.LastName,
+                user.PhoneNumber,
+                user.DateOfBirth);
 
             return Results.Ok(userResponse);
         }
@@ -405,7 +413,13 @@ namespace WebAPI.Controllers.v1
                 Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays)
             });
 
-            return Results.Ok(new LoginResponse(user.Id, user.Email!, user.FirstName, user.LastName, accessToken));
+            return Results.Ok(new LoginResponse(
+                    accessToken,
+                    refreshToken,
+                    new UserResponse(
+                        user.Id,
+                        user.FirstName,
+                        user.LastName)));
         }
 
         /// <summary>
@@ -500,7 +514,13 @@ namespace WebAPI.Controllers.v1
             // JWT
             string accessToken = _tokenService.CreateJwtToken(user, rolesResult.Value);
 
-            return Results.Ok(new LoginResponse(user.Id, user.Email!, user.FirstName, user.LastName, accessToken));
+            return Results.Ok(new LoginResponse(
+                    accessToken,
+                    refreshToken,
+                    new UserResponse(
+                        user.Id,
+                        user.FirstName,
+                        user.LastName)));
         }
 
         /// <summary>

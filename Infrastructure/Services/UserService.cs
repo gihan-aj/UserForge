@@ -27,7 +27,7 @@ namespace Infrastructure.Services
             _jwtSettings = jwtSettings.Value;
         }
 
-        public async Task<Result<User>> CreateAsync(string firstName, string lastName, string email, string password)
+        public async Task<Result<User>> CreateAsync(string firstName, string lastName, string email, string? phoneNumber, DateTime? dateOfBirth, string password)
         {
             if(await _userManager.FindByEmailAsync(email) != null)
             {
@@ -41,6 +41,9 @@ namespace Infrastructure.Services
                 Email = email,
                 UserName = email,
                 EmailConfirmed = false,
+                TwoFactorEnabled = false,
+                PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber,
+                DateOfBirth = dateOfBirth.HasValue? dateOfBirth: null,
             };
 
             var result = await _userManager.CreateAsync(user, password);

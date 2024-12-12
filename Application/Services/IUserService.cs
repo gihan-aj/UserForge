@@ -1,12 +1,13 @@
 ﻿using Domain.Users;
 using SharedKernal;
+using System;
 using System.Threading.Tasks;
 
 namespace Application.Services
 {
     public interface IUserService
     {
-        Task<Result<User>> CreateAsync(string firstName, string lastName, string email, string password);
+        Task<Result<User>> CreateAsync(string firstName, string lastName, string email, string? phoneNumber, DateTime? dateOfBirth, string password);
         Task<Result> AddToRoleAsync(User user, string role);
         Task<Result<string>> GenerateEmailConfirmationTokenAsync(User user);
         Task<Result<User>> FindByIdAsync(string id);
