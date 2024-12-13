@@ -1,5 +1,4 @@
-﻿using Application.Configurations;
-using Application.Services;
+﻿using Application.Services;
 using Azure.Core;
 using Domain.Users;
 using Infrastructure.Services;
@@ -13,7 +12,7 @@ using System.Threading.Tasks;
 using WebAPI.Infrastructure;
 using WebAPI.Models.Users;
 
-namespace WebAPI.Controllers.v2
+namespace WebAPI.Endpoints.v2
 {
     public static class UserEndpoints
     {
@@ -106,24 +105,24 @@ namespace WebAPI.Controllers.v2
 
                 // JWT
                 string accessToken = tokenService.CreateJwtToken(user, rolesResult.Value);
-            
+
                 return Results.Ok(new LoginResponse(
-                    accessToken, 
-                    newRefreshToken, 
+                    accessToken,
+                    newRefreshToken,
                     new UserResponse(
-                        user.Id, 
-                        user.FirstName, 
+                        user.Id,
+                        user.FirstName,
                         user.LastName)));
             }
 
             app.MapGet("user", GetUserDetails).RequireAuthorization();
 
             static async Task<IResult> GetUserDetails(
-                ClaimsPrincipal user, 
+                ClaimsPrincipal user,
                 IUserService userService)
             {
                 var id = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if(id is null)
+                if (id is null)
                 {
                     return HandleFailure(Result.Failure(UserErrors.Token.InvalidAccessToken));
                 }
@@ -137,9 +136,9 @@ namespace WebAPI.Controllers.v2
                 var userDetails = result.Value;
 
                 var userResponse = new GetUserResponse(
-                    id, 
-                    userDetails.Email!, 
-                    userDetails.FirstName, 
+                    id,
+                    userDetails.Email!,
+                    userDetails.FirstName,
                     userDetails.LastName,
                     userDetails.PhoneNumber,
                     userDetails.DateOfBirth);
@@ -210,6 +209,96 @@ namespace WebAPI.Controllers.v2
                         Message = "User created successfully. Please check your email to confirm your account."
                     });
             }
+
+            app.MapPut("user/confirm-email", ConfirmEmail).AllowAnonymous();
+
+            static async Task<IResult> ConfirmEmail(string userId, string token, IUserService userService)
+            {
+                var result = await userService.ConfirmEmailAsync(userId, token);
+                if (result.IsFailure)
+                {
+                    return HandleFailure(result);
+                }
+
+                return Results.NoContent();
+            }
+
+            app.MapPost("user/resend-email-confirmation-link", ResendEmailConfirmationLink).AllowAnonymous();
+
+            static async Task<IResult> ResendEmailConfirmationLink(
+                string email,
+                IUserService userService,
+                IEmailService emailService)
+            {
+                var userResult = await userService.FindByEmailAsync(email);
+                if (userResult.IsFailure)
+                {
+                    return HandleFailure(userResult);
+                }
+                var user = userResult.Value;
+
+                var tokenResult = await userService.GenerateEmailConfirmationTokenAsync(user);
+                if (tokenResult.IsFailure)
+                {
+                    return HandleFailure(tokenResult);
+                }
+
+                var token = tokenResult.Value;
+                var emailResult = await emailService.SendConfirmationEmailAsync(user, token);
+                if (emailResult.IsFailure)
+                {
+                    return HandleFailure(emailResult);
+                }
+
+                return Results.NoContent();
+            }
+
+            app.MapPost("user/send-password-reset-link", SendPasswordResetLink).AllowAnonymous();
+
+            static async Task<IResult> SendPasswordResetLink(
+                string email,
+                IUserService userService,
+                IEmailService emailService)
+            {
+                var userResult = await userService.FindByEmailAsync(email.ToLower());
+                if (userResult.IsFailure)
+                {
+                    return HandleFailure(userResult);
+                }
+
+                var user = userResult.Value;
+
+                var tokenResult = await userService.GeneratePasswordResetTokenAsync(user);
+                if (tokenResult.IsFailure)
+                {
+                    return HandleFailure(tokenResult);
+                }
+
+                var token = tokenResult.Value;
+
+                var emailResult = await emailService.SendPasswordResetEmailAsync(user, token);
+                if (emailResult.IsFailure)
+                {
+                    return HandleFailure(emailResult);
+                }
+
+                return Results.NoContent();
+            }
+
+            app.MapPut("user/reset-password", ResetPassword).AllowAnonymous();
+
+            static async Task<IResult> ResetPassword(
+                ResetPasswordRequest request,
+                IUserService userService)
+            {
+                var result = await userService.ResetPasswordAsync(request.UserId, request.Token, request.NewPassword);
+                if (result.IsFailure)
+                {
+                    return HandleFailure(result);
+                }
+
+                return Results.NoContent();
+            }
         }
 
         private static IResult HandleFailure(Result result) =>
@@ -226,7 +315,7 @@ namespace WebAPI.Controllers.v2
 
                 { Error: { Code: "IdentityError" } } =>
                 Results.BadRequest(ResultCreationHandler.CreateProblemDetails(
-                    "Identity Errors",
+                    "Validation Errors",
                     StatusCodes.Status400BadRequest,
                     result.Error,
                     result.Error.SubErrors.ToArray())),
@@ -243,10 +332,22 @@ namespace WebAPI.Controllers.v2
                     StatusCodes.Status404NotFound,
                     result.Error)),
 
+                { Error: { Code: "EmailNotFound" } } =>
+                Results.Problem(ResultCreationHandler.CreateProblemDetails(
+                    "Email Not Found",
+                    StatusCodes.Status404NotFound,
+                    result.Error)),
+                
                 { Error: { Code: "EmailAlreadyConfirmed" } } =>
                 Results.Problem(ResultCreationHandler.CreateProblemDetails(
                     "Email Already Confirmed",
                     StatusCodes.Status409Conflict,
+                    result.Error)),
+                
+                { Error: { Code: "EmailNotConfirmed" } } =>
+                Results.Problem(ResultCreationHandler.CreateProblemDetails(
+                    "Email Not Confirmed",
+                    StatusCodes.Status400BadRequest,
                     result.Error)),
 
                 { Error: { Code: "InvalidCredentials" } } =>
@@ -266,7 +367,7 @@ namespace WebAPI.Controllers.v2
                     "Token Error",
                     StatusCodes.Status401Unauthorized,
                     result.Error)),
-                
+
                 { Error: { Code: "InvalidAccessToken" } } =>
                 Results.Problem(ResultCreationHandler.CreateProblemDetails(
                     "Token Error",

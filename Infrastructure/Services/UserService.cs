@@ -98,7 +98,7 @@ namespace Infrastructure.Services
 
             if (user.EmailConfirmed)
             {
-                return Result.Failure(UserErrors.Conflict.EmailAlreadyConfirmed(userId));
+                return Result.Failure(UserErrors.Conflict.EmailAlreadyConfirmed(user.Email!));
             }
 
             var decodedTokenBytes = WebEncoders.Base64UrlDecode(token);
