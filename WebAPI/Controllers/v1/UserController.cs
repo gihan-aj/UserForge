@@ -808,7 +808,8 @@ namespace WebAPI.Controllers.v1
                 userId, 
                 request.FirstName.ToLower(), 
                 request.LastName.ToLower(), 
-                request.PhoneNumber.ToLower());
+                request.PhoneNumber,
+                request.DateOfBirth);
 
             if (result.IsFailure)
             {

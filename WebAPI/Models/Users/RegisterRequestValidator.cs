@@ -41,7 +41,8 @@ namespace WebAPI.Models.Users
 
             RuleFor(x => x.DateOfBirth)
                 .Must(BeAValidAge).When(x => x.DateOfBirth.HasValue)
-                .WithMessage("You must be at least 18 years old.");
+                .WithMessage("You must be at least 16 years old.")
+                .When(x => x.DateOfBirth.HasValue);
         }
 
         private bool BeAValidPhoneNumber(string? phoneNumber)
@@ -63,7 +64,7 @@ namespace WebAPI.Models.Users
                 age--;
             }
 
-            return age >= 18;
+            return age >= 16;
         }
     }
 }

@@ -18,7 +18,9 @@ namespace WebAPI.Endpoints.v2
     {
         public static void MapUserEndpoints(this IEndpointRouteBuilder app)
         {
-            app.MapPost("user/login", Login).AllowAnonymous();
+            app.MapPost("user/login", Login)
+                .Produces(StatusCodes.Status200OK, typeof(LoginResponse))
+                .AllowAnonymous();
 
             static async Task<IResult> Login(
                 LoginRequest request,
@@ -70,7 +72,9 @@ namespace WebAPI.Endpoints.v2
                         user.LastName)));
             }
 
-            app.MapPost("user/refresh", Refresh).AllowAnonymous();
+            app.MapPost("user/refresh", Refresh)
+                .Produces(StatusCodes.Status200OK, typeof(LoginResponse))
+                .AllowAnonymous();
 
             static async Task<IResult> Refresh(
                 RefreshTokenRequest request,
@@ -115,7 +119,9 @@ namespace WebAPI.Endpoints.v2
                         user.LastName)));
             }
 
-            app.MapGet("user", GetUserDetails).RequireAuthorization();
+            app.MapGet("user", GetUserDetails)
+                .Produces(StatusCodes.Status200OK, typeof(GetUserResponse))
+                .RequireAuthorization();
 
             static async Task<IResult> GetUserDetails(
                 ClaimsPrincipal user,
@@ -146,7 +152,9 @@ namespace WebAPI.Endpoints.v2
                 return Results.Ok(userResponse);
             }
 
-            app.MapPost("user/register", Register).AllowAnonymous();
+            app.MapPost("user/register", Register)
+                .Produces(StatusCodes.Status201Created)
+                .AllowAnonymous();
 
             static async Task<IResult> Register(
                 RegisterRequest request,
@@ -210,7 +218,9 @@ namespace WebAPI.Endpoints.v2
                     });
             }
 
-            app.MapPut("user/confirm-email", ConfirmEmail).AllowAnonymous();
+            app.MapPut("user/confirm-email", ConfirmEmail)
+                .Produces(StatusCodes.Status204NoContent)
+                .AllowAnonymous();
 
             static async Task<IResult> ConfirmEmail(string userId, string token, IUserService userService)
             {
@@ -223,7 +233,9 @@ namespace WebAPI.Endpoints.v2
                 return Results.NoContent();
             }
 
-            app.MapPost("user/resend-email-confirmation-link", ResendEmailConfirmationLink).AllowAnonymous();
+            app.MapPost("user/resend-email-confirmation-link", ResendEmailConfirmationLink)
+                .Produces(StatusCodes.Status204NoContent)
+                .AllowAnonymous();
 
             static async Task<IResult> ResendEmailConfirmationLink(
                 string email,
@@ -253,7 +265,9 @@ namespace WebAPI.Endpoints.v2
                 return Results.NoContent();
             }
 
-            app.MapPost("user/send-password-reset-link", SendPasswordResetLink).AllowAnonymous();
+            app.MapPost("user/send-password-reset-link", SendPasswordResetLink)
+                .Produces(StatusCodes.Status204NoContent)
+                .AllowAnonymous();
 
             static async Task<IResult> SendPasswordResetLink(
                 string email,
@@ -285,13 +299,172 @@ namespace WebAPI.Endpoints.v2
                 return Results.NoContent();
             }
 
-            app.MapPut("user/reset-password", ResetPassword).AllowAnonymous();
+            app.MapPut("user/reset-password", ResetPassword)
+                .Produces(StatusCodes.Status204NoContent)
+                .AllowAnonymous();
 
             static async Task<IResult> ResetPassword(
                 ResetPasswordRequest request,
                 IUserService userService)
             {
                 var result = await userService.ResetPasswordAsync(request.UserId, request.Token, request.NewPassword);
+                if (result.IsFailure)
+                {
+                    return HandleFailure(result);
+                }
+
+                return Results.NoContent();
+            }
+
+            app.MapPut("change-password", ChangePassword)
+                .Produces(StatusCodes.Status204NoContent)
+                .RequireAuthorization();
+
+            static async Task<IResult> ChangePassword(
+                ChangePasswordRequest request,
+                ClaimsPrincipal user,
+                IUserService userService)
+            {
+                if (request is null)
+                {
+                    throw new ArgumentNullException(nameof(request));
+                }
+
+                var validator = new ChangePasswordRequestValidator();
+                var validationResult = ValidationHandler.Handle(validator.Validate(request));
+                if (validationResult.IsFailure)
+                {
+                    return HandleFailure(validationResult);
+                }
+
+                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId is null)
+                {
+                    return HandleFailure(Result.Failure(UserErrors.Token.InvalidAccessToken));
+                }
+
+                var result = await userService.ChangePasswordAsync(userId, request.CurrentPassowrd, request.NewPassword, request.ConfirmNewPassword);
+                if (result.IsFailure)
+                {
+                    return HandleFailure(result);
+                }
+
+                return Results.NoContent();
+            }
+
+            app.MapPut("user/update-user", UpdateUser)
+                .Produces(StatusCodes.Status204NoContent)
+                .RequireAuthorization();
+
+            static async Task<IResult> UpdateUser(
+                UpdateUserRequest request,
+                ClaimsPrincipal user,
+                IUserService userService)
+            {
+                if (request is null)
+                {
+                    throw new ArgumentNullException(nameof(request));
+                }
+
+                var validator = new UpdateUserRequestValidator();
+                var validationResult = ValidationHandler.Handle(validator.Validate(request));
+                if (validationResult.IsFailure)
+                {
+                    return HandleFailure(validationResult);
+                }
+
+                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null)
+                {
+                    return HandleFailure(Result.Failure(UserErrors.Token.InvalidAccessToken));
+                }
+
+                var result = await userService.UpdateUserAsync(
+                    userId,
+                    request.FirstName.ToLower(),
+                    request.LastName.ToLower(),
+                    request.PhoneNumber,
+                    request.DateOfBirth
+                    );
+
+                if (result.IsFailure)
+                {
+                    return HandleFailure(result);
+                }
+
+                return Results.NoContent();
+            }
+
+            app.MapPost("user/sent-email-change-link", SendEmailChangeLink)
+                .Produces(StatusCodes.Status204NoContent)
+                .RequireAuthorization();
+
+            static async Task<IResult> SendEmailChangeLink(
+                ChangeEmailRequest request,
+                ClaimsPrincipal userClaims,
+                IUserService userService,
+                IEmailService emailService)
+            {
+                if (request is null)
+                {
+                    throw new ArgumentNullException(nameof(request));
+                }
+
+                var validator = new ChangeEmailRequestValidator();
+                var validationResult = ValidationHandler.Handle(validator.Validate(request));
+                if (validationResult.IsFailure)
+                {
+                    return HandleFailure(validationResult);
+                }
+
+                var userId = userClaims.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null)
+                {
+                    return HandleFailure(Result.Failure(UserErrors.Token.InvalidAccessToken));
+                }
+
+                var userResult = await userService.FindByIdAsync(userId);
+                if (userResult.IsFailure)
+                {
+                    return HandleFailure(userResult);
+                }
+
+                var user = userResult.Value;
+
+                var tokenResult = await userService.GenerateChangeEmailTokenAsync(userId, request.NewEmail, request.Password);
+                if (tokenResult.IsFailure)
+                {
+                    return HandleFailure(tokenResult);
+                }
+
+                var token = tokenResult.Value;
+
+                var emailResult = await emailService.SendEmailChangeEmailAsync(user, token, request.NewEmail);
+                if (emailResult.IsFailure)
+                {
+                    return HandleFailure(emailResult);
+                }
+
+                var deactivateResult = await userService.DeactivateAccountAsync(userId);
+                if (deactivateResult.IsFailure)
+                {
+                    return HandleFailure(deactivateResult);
+                }
+
+                return Results.NoContent();
+            }
+
+            app.MapPut("user/confirm-new-email", ConfirmNewEmail)
+                .Produces(StatusCodes.Status204NoContent)
+                .AllowAnonymous();
+
+            static async Task<IResult> ConfirmNewEmail(
+                string userId,
+                string newEmail,
+                string token,
+                IUserService userService)
+            {
+                var result = await userService.ChangeEmailAsync(userId, newEmail.ToLower(), token);
                 if (result.IsFailure)
                 {
                     return HandleFailure(result);

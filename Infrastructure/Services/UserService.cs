@@ -225,7 +225,7 @@ namespace Infrastructure.Services
             return Result.Success();
         }
 
-        public async Task<Result> UpdateUserAsync(string userId, string firstName, string lastName, string phoneNumber)
+        public async Task<Result> UpdateUserAsync(string userId, string firstName, string lastName, string? phoneNumber, DateTime? DateOfBirth)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if(user is null)
@@ -237,6 +237,11 @@ namespace Infrastructure.Services
             user.LastName = lastName;
             if(!string.IsNullOrEmpty(phoneNumber))
                 user.PhoneNumber = phoneNumber;
+
+            if (DateOfBirth.HasValue)
+            {
+                user.DateOfBirth = DateOfBirth;
+            }
 
             var updatedResult = await _userManager.UpdateAsync(user);
             if (!updatedResult.Succeeded)
