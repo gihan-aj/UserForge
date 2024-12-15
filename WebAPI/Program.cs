@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using WebAPI.Endpoints.v2;
+using WebAPI.Endpoints.v1;
 using WebAPI.Extensions;
 using WebAPI.Infrastructure;
 

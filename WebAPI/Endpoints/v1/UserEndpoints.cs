@@ -1,7 +1,5 @@
 ﻿using Application.Services;
-using Azure.Core;
 using Domain.Users;
-using Infrastructure.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -12,7 +10,7 @@ using System.Threading.Tasks;
 using WebAPI.Infrastructure;
 using WebAPI.Models.Users;
 
-namespace WebAPI.Endpoints.v2
+namespace WebAPI.Endpoints.v1
 {
     public static class UserEndpoints
     {

@@ -1,16 +1,12 @@
 ﻿using Application.Configurations;
 using Application.Services;
 using Asp.Versioning;
-using Azure.Core;
 using Domain.Users;
-using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using SharedKernal;
-using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
