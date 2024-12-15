@@ -17,7 +17,6 @@ namespace Infrastructure
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
             var connection = configuration.GetConnectionString("DefaultConnection");
-            var tokenSettings = configuration["TokenSettings:HmacSecretKey"];
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connection));

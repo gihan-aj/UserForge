@@ -18,13 +18,13 @@ namespace Infrastructure.Services
     {
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly JwtSettings _jwtSettings;
+        private readonly TokenSettings _tokenSettings;
 
-        public UserService(RoleManager<IdentityRole> roleManager, UserManager<User> userManager, IOptions<JwtSettings> jwtSettings)
+        public UserService(RoleManager<IdentityRole> roleManager, UserManager<User> userManager, IOptions<TokenSettings> tokenSettings)
         {
             _roleManager = roleManager;
             _userManager = userManager;
-            _jwtSettings = jwtSettings.Value;
+            _tokenSettings = tokenSettings.Value;
         }
 
         public async Task<Result<User>> CreateAsync(string firstName, string lastName, string email, string? phoneNumber, DateTime? dateOfBirth, string password)
@@ -154,7 +154,7 @@ namespace Infrastructure.Services
         public async Task<Result> PersistRefreshToken(User user, string refreshToken)
         {
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiery = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays);
+            user.RefreshTokenExpiery = DateTime.UtcNow.AddDays(_tokenSettings.RefreshToken.ExpiresInDays);
 
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)

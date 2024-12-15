@@ -15,13 +15,13 @@ namespace Infrastructure.Services
 {
     public class TokenService : ITokenService
     {
-        private readonly JwtSettings _jwtSettings;
+        private readonly TokenSettings _tokenSettings;
         private readonly SymmetricSecurityKey _key;
 
-        public TokenService(IOptions<JwtSettings> jwtSettings)
+        public TokenService(IOptions<TokenSettings> tokenSettings)
         {
-            _jwtSettings = jwtSettings.Value;
-            _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
+            _tokenSettings = tokenSettings.Value;
+            _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_tokenSettings.JWT.HmacSha256SecretKey));
         }
 
         public string CreateJwtToken(User user, string[] roles)
@@ -42,10 +42,10 @@ namespace Infrastructure.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(userClaims),
-                Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiresInMinutes),
+                Expires = DateTime.UtcNow.AddMinutes(_tokenSettings.JWT.ExpiresInMinutes),
                 SigningCredentials = credentials,
-                Issuer = _jwtSettings.Issuer,
-                Audience = _jwtSettings.ClientUrl
+                Issuer = _tokenSettings.JWT.Issuer,
+                Audience = _tokenSettings.JWT.ClientUrl
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();

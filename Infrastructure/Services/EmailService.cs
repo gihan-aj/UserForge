@@ -15,12 +15,12 @@ namespace Infrastructure.Services
     public class EmailService : IEmailService
     {
         private readonly SmtpSettings _smtpSettings;
-        private readonly JwtSettings _jwtSettings;
+        private readonly TokenSettings _tokenSettings;
 
-        public EmailService(IOptions<SmtpSettings> smtpSettings, IOptions<JwtSettings> jwtSettings)
+        public EmailService(IOptions<SmtpSettings> smtpSettings, IOptions<TokenSettings> tokenSettings)
         {
             _smtpSettings = smtpSettings.Value;
-            _jwtSettings = jwtSettings.Value;
+            _tokenSettings = tokenSettings.Value;
         }
 
         public async Task<Result> SendConfirmationEmailAsync(User user, string token)
@@ -29,8 +29,8 @@ namespace Infrastructure.Services
             {
                 token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
-                var clientUrl = _jwtSettings.ClientUrl;
-                var confirmEmailPath = _smtpSettings.ConfirmEmailPath;
+                var clientUrl = _tokenSettings.JWT.ClientUrl;
+                var confirmEmailPath = _smtpSettings.Routes.ConfirmEmailPath;
                 var url = $"{clientUrl}/{confirmEmailPath}?token={token}&userId={user.Id}";
 
                 var appName = _smtpSettings.ApplicationName;
@@ -57,7 +57,7 @@ namespace Infrastructure.Services
                     IsBodyHtml = true
                 };
 
-                mailMessage.To.Add(user.Email);
+                mailMessage.To.Add(user.Email!);
 
                 await smtpClient.SendMailAsync(mailMessage);
 
@@ -76,8 +76,8 @@ namespace Infrastructure.Services
             {
                 token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
-                var clientUrl = _jwtSettings.ClientUrl;
-                var resetPasswordPath = _smtpSettings.ResetPasswordPath;
+                var clientUrl = _tokenSettings.JWT.ClientUrl;
+                var resetPasswordPath = _smtpSettings.Routes.ResetPasswordPath;
                 var url = $"{clientUrl}/{resetPasswordPath}?token={token}&userId={user.Id}";
 
                 var appName = _smtpSettings.ApplicationName;
@@ -104,7 +104,7 @@ namespace Infrastructure.Services
                     IsBodyHtml = true
                 };
 
-                mailMessage.To.Add(user.Email);
+                mailMessage.To.Add(user.Email!);
 
                 await smtpClient.SendMailAsync(mailMessage);
 
@@ -123,8 +123,8 @@ namespace Infrastructure.Services
             {
                 token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
-                var clientUrl = _jwtSettings.ClientUrl;
-                var changeEmailPath = _smtpSettings.ChangeEmailPath;
+                var clientUrl = _tokenSettings.JWT.ClientUrl;
+                var changeEmailPath = _smtpSettings.Routes.ChangeEmailPath;
                 var url = $"{clientUrl}/{changeEmailPath}?token={token}&userId={user.Id}";
 
                 var appName = _smtpSettings.ApplicationName;

@@ -27,14 +27,14 @@ namespace WebAPI.Controllers.v1
         private readonly IEmailService _emailService;
         private readonly IUserService _userService;
         private readonly ITokenService _tokenService;
-        private readonly JwtSettings _jwtSettings;
+        private readonly TokenSettings _tokenSettings;
 
-        public UserController(IEmailService emailService, IUserService userService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings)
+        public UserController(IEmailService emailService, IUserService userService, ITokenService tokenService, IOptions<TokenSettings> tokenSettings)
         {
             _emailService = emailService;
             _userService = userService;
             _tokenService = tokenService;
-            _jwtSettings = jwtSettings.Value;
+            _tokenSettings = tokenSettings.Value;
         }
 
         /// <summary>
@@ -410,7 +410,7 @@ namespace WebAPI.Controllers.v1
                 HttpOnly = true,
                 Secure = false, // For production , HTTPS
                 SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays)
+                Expires = DateTime.UtcNow.AddDays(_tokenSettings.RefreshToken.ExpiresInDays)
             });
 
             return Results.Ok(new LoginResponse(
@@ -505,7 +505,7 @@ namespace WebAPI.Controllers.v1
                 HttpOnly = true,
                 Secure = false, // For production , HTTPS
                 SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays)
+                Expires = DateTime.UtcNow.AddDays(_tokenSettings.RefreshToken.ExpiresInDays)
             });
 
             // User roles

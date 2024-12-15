@@ -9,9 +9,8 @@ namespace WebAPI.Extensions
     {
         public static IServiceCollection ConfigureAppSettings(this IServiceCollection services, IConfiguration configuration)
         {
-            services.Configure<SmtpSettings>(configuration.GetSection("Smtp"))
-                .Configure<JwtSettings>(configuration.GetSection("JWT"))
-                .Configure<TokenSettings>(configuration.GetSection("TokenSettings"));
+            services.Configure<SmtpSettings>(configuration.GetSection("Email:SMTP"))
+                .Configure<TokenSettings>(configuration.GetSection("Authentication:TokenSettings"));
 
             return services;
         }
@@ -19,7 +18,7 @@ namespace WebAPI.Extensions
         {
             app.UseCors(options =>
             {
-                options.WithOrigins("http://localhost:4200")
+                options.WithOrigins("http://localhost:4200") 
                     .AllowAnyMethod()
                     .AllowAnyHeader();
             });

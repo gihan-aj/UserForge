@@ -12,11 +12,13 @@ namespace Infrastructure.Persistence
         where TUser : class
     {
         private readonly string _hmacKey;
+        private readonly int _tokenExpieryInMinutes;
 
         public CustomPasswordResetTokenProvider(IOptions<TokenSettings> tokenSetings)
         {
-            _hmacKey = tokenSetings.Value.HmacSecretKey
-                ?? throw new ArgumentNullException(nameof(tokenSetings.Value.HmacSecretKey));
+            _hmacKey = tokenSetings.Value.PasswordResetToken.HmacSecretKey
+                ?? throw new ArgumentNullException(nameof(tokenSetings.Value.PasswordResetToken.HmacSecretKey));
+            _tokenExpieryInMinutes = tokenSetings.Value.PasswordResetToken.ExpiresInMinutes;
         }
 
         public async Task<bool> CanGenerateTwoFactorTokenAsync(UserManager<TUser> manager, TUser user)
@@ -30,7 +32,7 @@ namespace Infrastructure.Persistence
         {
             var email = await manager.GetEmailAsync(user).ConfigureAwait(false);
 
-            return GenerateHmacToken(email, purpose, _hmacKey);
+            return GenerateHmacToken(email!, purpose, _hmacKey);
         }
 
         public async Task<bool> ValidateAsync(string purpose, string token, UserManager<TUser> manager, TUser user)
@@ -48,7 +50,7 @@ namespace Infrastructure.Persistence
             var signature = parts[3];
 
             var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var tokenValidityDuration = TimeSpan.FromMinutes(15).TotalSeconds;
+            var tokenValidityDuration = TimeSpan.FromMinutes(_tokenExpieryInMinutes).TotalSeconds;
 
             if(currentTime - timestamp > tokenValidityDuration)
             {

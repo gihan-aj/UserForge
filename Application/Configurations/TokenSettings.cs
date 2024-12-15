@@ -2,6 +2,8 @@
 {
     public class TokenSettings
     {
-        public string HmacSecretKey { get; set; } = string.Empty;
+        public JwtSettings JWT { get; set; } = new();
+        public RefreshTokenSettings RefreshToken { get; set; } = new();
+        public PasswordResetTokenSettings PasswordResetToken { get; set; } = new();
     }
 }
