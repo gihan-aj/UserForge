@@ -1,4 +1,4 @@
-﻿namespace Application.Configurations
+﻿namespace Infrastructure.Settings
 {
     public class RefreshTokenSettings
     {

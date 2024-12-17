@@ -27,7 +27,7 @@ namespace WebAPI.Models.Users
                 .WithMessage("Please provide a valid phone number.");
 
             RuleFor(x => x.DateOfBirth)
-                .Must(BeAValidAge).When(x => x.DateOfBirth.HasValue)
+                .Must(BeAValidAge)
                 .WithMessage("You must be at least 16 years old.")
                 .When(x => x.DateOfBirth.HasValue);
 

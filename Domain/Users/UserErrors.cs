@@ -17,6 +17,7 @@ namespace Domain.Users
         public static class NotFound
         {
             public static Error User(string userId) => new("UserNotFound", $"No user found with ID: {userId}.");
+            public static Error Users => new("UsersNotFound", "No users find with given ids.");
             public static Error Email(string email) => new("EmailNotFound", $"No account found with email: {email}.");
             public static Error Resource(string resourceName) => new("ResourceNotFound", $"{resourceName} was not found.");
         }

@@ -1,0 +1,21 @@
+Infrastructure
+|--DependencyInjections
+|	|--ServiceRegistration.cs
+|	|--DependencyInjection.cs
+|--Identity
+|	|--CustomPasswordResetTokenProvider.cs
+|--Migrations
+|	|--ApplicationDbContextModelSnapshoot.cs
+|--Persistence
+|	|--Configurations
+|	|--ApplicationDbContext.cs
+|	|--CustomPasswordResetTokenProvider.cs
+|	|--DataSeeder.cs
+|--Repositories
+|	|--UsersRepository.cs
+|--Services
+|	|--EmailService.cs
+|	|--TokenService.cs
+|	|--UserService.cs
+|--Settings
+|	|--TokenSettings.cs

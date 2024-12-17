@@ -1,4 +1,4 @@
-﻿using Application.Configurations;
+﻿using Infrastructure.Settings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using System;
@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure.Persistence
+namespace Infrastructure.Identity
 {
     public class CustomPasswordResetTokenProvider<TUser> : IUserTwoFactorTokenProvider<TUser>
         where TUser : class
@@ -39,7 +39,7 @@ namespace Infrastructure.Persistence
         {
             var parts = token.Split(':');
 
-            if(parts.Length != 4)
+            if (parts.Length != 4)
             {
                 return false;
             }
@@ -52,7 +52,7 @@ namespace Infrastructure.Persistence
             var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var tokenValidityDuration = TimeSpan.FromMinutes(_tokenExpieryInMinutes).TotalSeconds;
 
-            if(currentTime - timestamp > tokenValidityDuration)
+            if (currentTime - timestamp > tokenValidityDuration)
             {
                 return false;
             }
@@ -60,10 +60,10 @@ namespace Infrastructure.Persistence
             var secretKey = _hmacKey;
             var rawToken = $"{email}:{tokenPurpose}:{timestamp}";
 
-            using(var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey)))
+            using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey)))
             {
                 var computedSignature = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(rawToken)));
-                if(signature != computedSignature)
+                if (signature != computedSignature)
                 {
                     return false;
                 }

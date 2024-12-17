@@ -1,6 +1,6 @@
-﻿using Application.Configurations;
-using Application.Services;
+﻿using Application.Services;
 using Domain.Users;
+using Infrastructure.Settings;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;

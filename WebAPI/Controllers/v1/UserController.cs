@@ -1,7 +1,7 @@
-﻿using Application.Configurations;
-using Application.Services;
+﻿using Application.Services;
 using Asp.Versioning;
 using Domain.Users;
+using Infrastructure.Settings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

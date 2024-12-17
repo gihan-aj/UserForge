@@ -1,16 +1,13 @@
-﻿using Application.Configurations;
-using Application.Services;
-using Domain.Users;
+﻿using Domain.Users;
+using Infrastructure.DependencyInjection.DependencyInjection;
+using Infrastructure.Identity;
 using Infrastructure.Persistence;
-using Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using System;
 
-namespace Infrastructure
+namespace Infrastructure.DependencyInjections
 {
     public static class DependencyInjection
     {
@@ -18,9 +15,11 @@ namespace Infrastructure
         {
             var connection = configuration.GetConnectionString("DefaultConnection");
 
+            // Add DbContext
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connection));
 
+            // Add Identity Configuration
             services.AddIdentityCore<User>(options =>
             {
                 options.SignIn.RequireConfirmedAccount = false;
@@ -46,9 +45,8 @@ namespace Infrastructure
                 .AddTokenProvider<EmailTokenProvider<User>>(TokenOptions.DefaultEmailProvider)
                 .AddTokenProvider<CustomPasswordResetTokenProvider<User>>(TokenOptions.DefaultProvider);
 
-            services.AddTransient<IEmailService, EmailService>();
-            services.AddTransient<IUserService, UserService>();
-            services.AddTransient<ITokenService, TokenService>();
+            // Register services
+            services.AddServiceRegistrations();
 
             return services;
         }

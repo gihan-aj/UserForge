@@ -1,6 +1,6 @@
-﻿using Application.Configurations;
-using Application.Services;
+﻿using Application.Services;
 using Domain.Users;
+using Infrastructure.Settings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
@@ -43,7 +43,9 @@ namespace Infrastructure.Services
                 EmailConfirmed = false,
                 TwoFactorEnabled = false,
                 PhoneNumber = string.IsNullOrWhiteSpace(phoneNumber) ? null : phoneNumber,
-                DateOfBirth = dateOfBirth.HasValue? dateOfBirth: null,
+                DateOfBirth = dateOfBirth.HasValue
+                ? dateOfBirth
+                : null,
             };
 
             var result = await _userManager.CreateAsync(user, password);
@@ -225,7 +227,7 @@ namespace Infrastructure.Services
             return Result.Success();
         }
 
-        public async Task<Result> UpdateUserAsync(string userId, string firstName, string lastName, string? phoneNumber, DateTime? DateOfBirth)
+        public async Task<Result> UpdateUserAsync(string userId, string firstName, string lastName, string? phoneNumber, DateTime? dateOfBirth)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if(user is null)
@@ -238,9 +240,9 @@ namespace Infrastructure.Services
             if(!string.IsNullOrEmpty(phoneNumber))
                 user.PhoneNumber = phoneNumber;
 
-            if (DateOfBirth.HasValue)
+            if (dateOfBirth.HasValue)
             {
-                user.DateOfBirth = DateOfBirth;
+                user.DateOfBirth = dateOfBirth;
             }
 
             var updatedResult = await _userManager.UpdateAsync(user);

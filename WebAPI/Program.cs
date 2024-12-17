@@ -1,5 +1,6 @@
+using Application;
 using Asp.Versioning.Builder;
-using Infrastructure;
+using Infrastructure.DependencyInjections;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 builder.Services.ConfigureAppSettings(configuration);
+
+builder.Services.AddApplication();
 
 builder.Services.AddInfrastructure(configuration);
 
