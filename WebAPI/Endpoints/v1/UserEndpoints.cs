@@ -16,7 +16,11 @@ namespace WebAPI.Endpoints.v1
     {
         public static void MapUserEndpoints(this IEndpointRouteBuilder app)
         {
-            app.MapPost("user/login", Login)
+            var group = app
+                .MapGroup("user")
+                .WithTags("User");
+
+            group.MapPost("login", Login)
                 .Produces(StatusCodes.Status200OK, typeof(LoginResponse))
                 .AllowAnonymous();
 
@@ -70,7 +74,7 @@ namespace WebAPI.Endpoints.v1
                         user.LastName)));
             }
 
-            app.MapPost("user/refresh", Refresh)
+            group.MapPost("refresh", Refresh)
                 .Produces(StatusCodes.Status200OK, typeof(LoginResponse))
                 .AllowAnonymous();
 
@@ -117,7 +121,7 @@ namespace WebAPI.Endpoints.v1
                         user.LastName)));
             }
 
-            app.MapGet("user", GetUserDetails)
+            group.MapGet("", GetUserDetails)
                 .Produces(StatusCodes.Status200OK, typeof(GetUserResponse))
                 .RequireAuthorization();
 
@@ -150,7 +154,7 @@ namespace WebAPI.Endpoints.v1
                 return Results.Ok(userResponse);
             }
 
-            app.MapPost("user/register", Register)
+            group.MapPost("register", Register)
                 .Produces(StatusCodes.Status201Created)
                 .AllowAnonymous();
 
@@ -216,7 +220,7 @@ namespace WebAPI.Endpoints.v1
                     });
             }
 
-            app.MapPut("user/confirm-email", ConfirmEmail)
+            group.MapPut("confirm-email", ConfirmEmail)
                 .Produces(StatusCodes.Status204NoContent)
                 .AllowAnonymous();
 
@@ -231,7 +235,7 @@ namespace WebAPI.Endpoints.v1
                 return Results.NoContent();
             }
 
-            app.MapPost("user/resend-email-confirmation-link", ResendEmailConfirmationLink)
+            group.MapPost("resend-email-confirmation-link", ResendEmailConfirmationLink)
                 .Produces(StatusCodes.Status204NoContent)
                 .AllowAnonymous();
 
@@ -263,7 +267,7 @@ namespace WebAPI.Endpoints.v1
                 return Results.NoContent();
             }
 
-            app.MapPost("user/send-password-reset-link", SendPasswordResetLink)
+            group.MapPost("send-password-reset-link", SendPasswordResetLink)
                 .Produces(StatusCodes.Status204NoContent)
                 .AllowAnonymous();
 
@@ -297,7 +301,7 @@ namespace WebAPI.Endpoints.v1
                 return Results.NoContent();
             }
 
-            app.MapPut("user/reset-password", ResetPassword)
+            group.MapPut("reset-password", ResetPassword)
                 .Produces(StatusCodes.Status204NoContent)
                 .AllowAnonymous();
 
@@ -314,7 +318,7 @@ namespace WebAPI.Endpoints.v1
                 return Results.NoContent();
             }
 
-            app.MapPut("change-password", ChangePassword)
+            group.MapPut("change-password", ChangePassword)
                 .Produces(StatusCodes.Status204NoContent)
                 .RequireAuthorization();
 
@@ -350,7 +354,7 @@ namespace WebAPI.Endpoints.v1
                 return Results.NoContent();
             }
 
-            app.MapPut("user/update-user", UpdateUser)
+            group.MapPut("update-user", UpdateUser)
                 .Produces(StatusCodes.Status204NoContent)
                 .RequireAuthorization();
 
@@ -393,7 +397,7 @@ namespace WebAPI.Endpoints.v1
                 return Results.NoContent();
             }
 
-            app.MapPost("user/sent-email-change-link", SendEmailChangeLink)
+            group.MapPost("sent-email-change-link", SendEmailChangeLink)
                 .Produces(StatusCodes.Status204NoContent)
                 .RequireAuthorization();
 
@@ -452,7 +456,7 @@ namespace WebAPI.Endpoints.v1
                 return Results.NoContent();
             }
 
-            app.MapPut("user/confirm-new-email", ConfirmNewEmail)
+            group.MapPut("confirm-new-email", ConfirmNewEmail)
                 .Produces(StatusCodes.Status204NoContent)
                 .AllowAnonymous();
 

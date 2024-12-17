@@ -14,6 +14,7 @@ namespace Infrastructure.DependencyInjection.DependencyInjection
             services.AddTransient<IEmailService, EmailService>();
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<ITokenService, TokenService>();
+            services.AddTransient<IUsersService, UsersService>();
 
             // Register Repositories
             services.AddTransient<IUsersRepository, UsersRepository>();
