@@ -194,7 +194,7 @@ namespace WebAPI.Endpoints.v1
                 var addToRoleResult = await userService.AddToRoleAsync(user, UserRoles.User);
                 if (addToRoleResult.IsFailure)
                 {
-                    return HandleFailure(result);
+                    return HandleFailure(addToRoleResult);
                 }
 
                 var emailConfirmationTokenResult = await userService.GenerateEmailConfirmationTokenAsync(user);
